@@ -1,2 +1,2 @@
 ---
-# vars file for ansible-role-rhel9-stig
+# defaults file for rhel9_stig
