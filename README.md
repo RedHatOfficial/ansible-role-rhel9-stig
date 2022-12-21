@@ -1,7 +1,7 @@
-DRAFT DISA STIG for Red Hat Enterprise Linux 9
+[DRAFT] DISA STIG for Red Hat Enterprise Linux 9
 =========
 
-Ansible Role for DRAFT DISA STIG for Red Hat Enterprise Linux 9  
+Ansible Role for [DRAFT] DISA STIG for Red Hat Enterprise Linux 9  
   
 Profile Description:  
 This is a draft profile based on its RHEL8 version for experimental purposes.  
