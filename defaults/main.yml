@@ -9,6 +9,7 @@ login_banner_text: ^(You[\s\n]+are[\s\n]+accessing[\s\n]+a[\s\n]+U\.S\.[\s\n]+Go
 var_password_pam_remember: '5'
 var_password_pam_remember_control_flag: required
 var_accounts_passwords_pam_faillock_deny: '3'
+var_accounts_passwords_pam_faillock_dir: /var/log/faillock
 var_accounts_passwords_pam_faillock_fail_interval: '900'
 var_accounts_passwords_pam_faillock_unlock_time: '0'
 var_password_pam_dcredit: '-1'
@@ -34,6 +35,7 @@ var_auditd_disk_error_action: halt
 var_auditd_disk_full_action: halt
 var_auditd_action_mail_acct: root
 var_auditd_admin_space_left_action: single
+var_auditd_admin_space_left_percentage: '5'
 var_auditd_max_log_file_action: rotate
 var_auditd_space_left_action: email
 var_auditd_space_left_percentage: '25'
@@ -66,12 +68,12 @@ var_ssh_client_rekey_limit_size: 512M
 var_ssh_client_rekey_limit_time: 1h
 var_sshd_set_keepalive: '0'
 sshd_idle_timeout_value: '600'
+firewalld_sshd_zone: public
 var_sshd_disable_compression: 'no'
 var_rekey_limit_size: 1G
 var_rekey_limit_time: 1h
 var_sssd_certificate_verification_digest_function: sha512
 account_disable_post_pw_expiration: true
-account_passwords_pam_faillock_audit: true
 accounts_logon_fail_delay: true
 accounts_max_concurrent_login_sessions: true
 accounts_maximum_age_login_defs: true
@@ -93,8 +95,10 @@ accounts_password_pam_pwquality_system_auth: true
 accounts_password_pam_retry: true
 accounts_password_pam_ucredit: true
 accounts_password_set_max_life_existing: true
+accounts_passwords_pam_faillock_audit: true
 accounts_passwords_pam_faillock_deny: true
 accounts_passwords_pam_faillock_deny_root: true
+accounts_passwords_pam_faillock_dir: true
 accounts_passwords_pam_faillock_interval: true
 accounts_passwords_pam_faillock_unlock_time: true
 accounts_tmout: true
@@ -129,6 +133,7 @@ audit_rules_dac_modification_umount: true
 audit_rules_dac_modification_umount2: true
 audit_rules_execution_chacl: true
 audit_rules_execution_chcon: true
+audit_rules_execution_restorecon: true
 audit_rules_execution_semanage: true
 audit_rules_execution_setfacl: true
 audit_rules_execution_setfiles: true
@@ -191,6 +196,7 @@ auditd_data_disk_error_action_stig: true
 auditd_data_disk_full_action_stig: true
 auditd_data_retention_action_mail_acct: true
 auditd_data_retention_admin_space_left_action: true
+auditd_data_retention_admin_space_left_percentage: true
 auditd_data_retention_max_log_file_action_stig: true
 auditd_data_retention_space_left_action: true
 auditd_data_retention_space_left_percentage: true
@@ -219,6 +225,7 @@ dconf_gnome_banner_enabled: true
 dconf_gnome_disable_automount_open: true
 dconf_gnome_disable_autorun: true
 dconf_gnome_disable_ctrlaltdel_reboot: true
+dconf_gnome_disable_user_list: true
 dconf_gnome_lock_screen_on_smartcard_removal: true
 dconf_gnome_login_banner_text: true
 dconf_gnome_screensaver_idle_delay: true
@@ -311,6 +318,7 @@ file_permissions_sshd_private_key: true
 file_permissions_sshd_pub_key: true
 file_permissions_var_log: true
 file_permissions_var_log_messages: true
+firewalld_sshd_port_enabled: true
 gnome_gdm_disable_automatic_login: true
 grub2_audit_argument: true
 grub2_audit_backlog_limit_argument: true
@@ -500,5 +508,6 @@ sysctl_user_max_user_namespaces: true
 unknown_severity: true
 unknown_strategy: true
 usbguard_generate_policy: true
+use_kerberos_security_all_exports: true
 use_pam_wheel_for_su: true
 wireless_disable_interfaces: true
