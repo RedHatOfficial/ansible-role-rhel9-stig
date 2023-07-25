@@ -214,6 +214,7 @@ chronyd_client_only: true
 chronyd_no_chronyc_network: true
 chronyd_or_ntpd_set_maxpoll: true
 clean_components_post_updating: true
+configure_bashrc_exec_tmux: true
 configure_crypto_policy: true
 configure_libreswan_crypto_policy: true
 configure_openssl_crypto_policy: true
@@ -377,6 +378,7 @@ mount_option_var_tmp_nosuid: true
 no_empty_passwords: true
 no_empty_passwords_etc_shadow: true
 no_reboot_needed: true
+no_shelllogin_for_systemaccounts: true
 package_aide_installed: true
 package_audispd_plugins_installed: true
 package_audit_installed: true
@@ -422,6 +424,7 @@ root_permissions_syslibrary_files: true
 rsyslog_encrypt_offload_actionsendstreamdriverauthmode: true
 rsyslog_encrypt_offload_actionsendstreamdrivermode: true
 rsyslog_encrypt_offload_defaultnetstreamdriver: true
+rsyslog_nolisten: true
 rsyslog_remote_access_monitoring: true
 rsyslog_remote_loghost: true
 security_patches_up_to_date: true
