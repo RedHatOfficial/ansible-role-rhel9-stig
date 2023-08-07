@@ -1,5 +1,6 @@
 ---
 # defaults file for rhel9_stig
+var_aide_scan_notification_email: root@localhost
 var_system_crypto_policy: FIPS
 inactivity_timeout_value: '900'
 var_screensaver_lock_delay: '5'
@@ -24,6 +25,7 @@ var_password_pam_ocredit: '-1'
 var_password_pam_retry: '3'
 var_password_pam_ucredit: '-1'
 var_password_hashing_algorithm: SHA512
+var_smartcard_drivers: cac
 var_account_disable_post_pw_expiration: '35'
 var_accounts_maximum_age_login_defs: '60'
 var_accounts_minimum_age_login_defs: '1'
@@ -31,6 +33,7 @@ var_password_pam_unix_rounds: '5000'
 var_accounts_fail_delay: '4'
 var_accounts_max_concurrent_login_sessions: '10'
 var_accounts_tmout: '600'
+var_user_initialization_files_regex: ^(\.bashrc|\.zshrc|\.cshrc|\.profile|\.bash_login|\.bash_profile)$
 var_accounts_user_umask: '077'
 var_audit_failure_mode: '2'
 var_auditd_disk_error_action: halt
@@ -65,6 +68,7 @@ var_selinux_policy_name: targeted
 var_selinux_state: enforcing
 var_postfix_root_mail_alias: system.administrator@mail.mil
 var_time_service_set_maxpoll: '16'
+var_tftpd_secure_directory: /var/lib/tftpboot
 var_ssh_client_rekey_limit_size: 512M
 var_ssh_client_rekey_limit_time: 1h
 var_sshd_set_keepalive: '0'
@@ -75,11 +79,12 @@ var_rekey_limit_size: 1G
 var_rekey_limit_time: 1h
 var_sssd_certificate_verification_digest_function: sha512
 account_disable_post_pw_expiration: true
-account_passwords_pam_faillock_audit: true
+accounts_have_homedir_login_defs: true
 accounts_logon_fail_delay: true
 accounts_max_concurrent_login_sessions: true
 accounts_maximum_age_login_defs: true
 accounts_minimum_age_login_defs: true
+accounts_no_uid_except_zero: true
 accounts_password_pam_dcredit: true
 accounts_password_pam_dictcheck: true
 accounts_password_pam_difok: true
@@ -99,6 +104,7 @@ accounts_password_pam_ucredit: true
 accounts_password_pam_unix_rounds_password_auth: true
 accounts_password_pam_unix_rounds_system_auth: true
 accounts_password_set_max_life_existing: true
+accounts_password_set_min_life_existing: true
 accounts_passwords_pam_faillock_audit: true
 accounts_passwords_pam_faillock_deny: true
 accounts_passwords_pam_faillock_deny_root: true
@@ -115,6 +121,9 @@ accounts_user_interactive_home_directory_defined: true
 accounts_user_interactive_home_directory_exists: true
 aide_check_audit_tools: true
 aide_periodic_cron_checking: true
+aide_scan_notification: true
+aide_verify_acls: true
+aide_verify_ext_attributes: true
 audit_immutable_login_uids: true
 audit_privileged_commands_init: true
 audit_privileged_commands_poweroff: true
@@ -217,6 +226,7 @@ clean_components_post_updating: true
 configure_bashrc_exec_tmux: true
 configure_crypto_policy: true
 configure_libreswan_crypto_policy: true
+configure_opensc_card_drivers: true
 configure_openssl_crypto_policy: true
 configure_ssh_crypto_policy: true
 configure_strategy: true
@@ -224,6 +234,7 @@ configure_tmux_lock_after_time: true
 configure_tmux_lock_command: true
 coredump_disable_backtraces: true
 coredump_disable_storage: true
+dconf_db_up_to_date: true
 dconf_gnome_banner_enabled: true
 dconf_gnome_disable_automount_open: true
 dconf_gnome_disable_autorun: true
@@ -231,6 +242,7 @@ dconf_gnome_disable_ctrlaltdel_reboot: true
 dconf_gnome_disable_restart_shutdown: true
 dconf_gnome_disable_user_list: true
 dconf_gnome_lock_screen_on_smartcard_removal: true
+dconf_gnome_login_banner_text: true
 dconf_gnome_screensaver_idle_delay: true
 dconf_gnome_screensaver_lock_delay: true
 dconf_gnome_screensaver_lock_enabled: true
@@ -240,10 +252,14 @@ dconf_gnome_session_idle_user_locks: true
 dir_group_ownership_library_dirs: true
 dir_ownership_library_dirs: true
 dir_permissions_library_dirs: true
+dir_perms_world_writable_root_owned: true
 dir_perms_world_writable_sticky_bits: true
+disable_ctrlaltdel_burstaction: true
+disable_ctrlaltdel_reboot: true
 disable_host_auth: true
 disable_strategy: true
 disable_users_coredumps: true
+disallow_bypass_password_sudo: true
 display_login_attempts: true
 enable_authselect: true
 enable_dracut_fips_module: true
@@ -296,6 +312,7 @@ file_owner_var_log: true
 file_owner_var_log_messages: true
 file_ownership_binary_dirs: true
 file_ownership_library_dirs: true
+file_permission_user_init_files: true
 file_permissions_backup_etc_group: true
 file_permissions_backup_etc_gshadow: true
 file_permissions_backup_etc_passwd: true
@@ -375,10 +392,13 @@ mount_option_var_nodev: true
 mount_option_var_tmp_nodev: true
 mount_option_var_tmp_noexec: true
 mount_option_var_tmp_nosuid: true
+network_sniffer_disabled: true
 no_empty_passwords: true
 no_empty_passwords_etc_shadow: true
+no_host_based_files: true
 no_reboot_needed: true
 no_shelllogin_for_systemaccounts: true
+no_user_host_based_files: true
 package_aide_installed: true
 package_audispd_plugins_installed: true
 package_audit_installed: true
@@ -447,6 +467,7 @@ set_password_hashing_algorithm_libuserconf: true
 set_password_hashing_algorithm_logindefs: true
 set_password_hashing_algorithm_passwordauth: true
 set_password_hashing_algorithm_systemauth: true
+set_password_hashing_min_rounds_logindefs: true
 skip_ansible_lint: true
 ssh_client_rekey_limit: true
 sshd_disable_compression: true
@@ -506,9 +527,11 @@ sysctl_net_ipv6_conf_default_accept_ra: true
 sysctl_net_ipv6_conf_default_accept_redirects: true
 sysctl_net_ipv6_conf_default_accept_source_route: true
 sysctl_user_max_user_namespaces: true
+tftpd_uses_secure_mode: true
 unknown_severity: true
 unknown_strategy: true
 usbguard_generate_policy: true
 use_kerberos_security_all_exports: true
 use_pam_wheel_for_su: true
 wireless_disable_interfaces: true
+xwindows_runlevel_target: true
