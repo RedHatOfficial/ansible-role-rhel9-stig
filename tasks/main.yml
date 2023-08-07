@@ -128,10 +128,10 @@
 
 - name: Ensure AIDE is installed
   package:
-    name:
-    - aide
-    - crontabs
+    name: '{{ item }}'
     state: present
+  with_items:
+  - aide
   when:
   - aide_periodic_cron_checking | bool
   - low_complexity | bool
@@ -264,6 +264,218 @@
   - low_complexity
   - low_disruption
   - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Ensure AIDE is installed
+  package:
+    name: '{{ item }}'
+    state: present
+  with_items:
+  - aide
+  when:
+  - aide_scan_notification | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-90844-2
+  - NIST-800-53-CM-3(5)
+  - NIST-800-53-CM-6(a)
+  - aide_scan_notification
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Configure Notification of Post-AIDE Scan Details
+  cron:
+    name: run AIDE check
+    minute: 5
+    hour: 4
+    weekday: 0
+    user: root
+    job: /usr/sbin/aide  --check | /bin/mail -s "$(hostname) - AIDE Integrity Check" {{ var_aide_scan_notification_email }}
+  when:
+  - aide_scan_notification | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-90844-2
+  - NIST-800-53-CM-3(5)
+  - NIST-800-53-CM-6(a)
+  - aide_scan_notification
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Gather list of packages
+  package_facts:
+    manager: auto
+  when:
+  - aide_verify_acls | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - low_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ''
+  tags:
+  - CCE-90837-6
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-SI-7
+  - NIST-800-53-SI-7(1)
+  - aide_verify_acls
+  - low_complexity
+  - low_disruption
+  - low_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Get rules groups
+  shell: 'set -o pipefail
+
+    LC_ALL=C grep "^[A-Z][A-Za-z_]*" /etc/aide.conf | grep -v "^ALLXTRAHASHES" | cut -f1 -d ''='' | tr -d '' '' | sort -u
+    || true
+
+    '
+  when:
+  - aide_verify_acls | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - low_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '''aide'' in ansible_facts.packages'
+  register: find_rules_groups_results
+  tags:
+  - CCE-90837-6
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-SI-7
+  - NIST-800-53-SI-7(1)
+  - aide_verify_acls
+  - low_complexity
+  - low_disruption
+  - low_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Ensure the acl rule is present when aide is installed.
+  replace:
+    path: /etc/aide.conf
+    regexp: (^\s*{{ item }}\s*=\s*)(?!.*acl)([^\s]*)
+    replace: \g<1>\g<2>+acl
+  when:
+  - aide_verify_acls | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - low_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '''aide'' in ansible_facts.packages'
+  with_items: '{{ find_rules_groups_results.stdout_lines | map(''trim'') | list }}'
+  tags:
+  - CCE-90837-6
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-SI-7
+  - NIST-800-53-SI-7(1)
+  - aide_verify_acls
+  - low_complexity
+  - low_disruption
+  - low_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Gather list of packages
+  package_facts:
+    manager: auto
+  when:
+  - aide_verify_ext_attributes | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - low_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ''
+  tags:
+  - CCE-83439-0
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-SI-7
+  - NIST-800-53-SI-7(1)
+  - aide_verify_ext_attributes
+  - low_complexity
+  - low_disruption
+  - low_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Get rules groups
+  shell: 'set -o pipefail
+
+    LC_ALL=C grep "^[A-Z][A-Za-z_]*" /etc/aide.conf | grep -v "^ALLXTRAHASHES" | cut -f1 -d ''='' | tr -d '' '' | sort -u
+    || true
+
+    '
+  when:
+  - aide_verify_ext_attributes | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - low_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '''aide'' in ansible_facts.packages'
+  register: find_rules_groups_results
+  tags:
+  - CCE-83439-0
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-SI-7
+  - NIST-800-53-SI-7(1)
+  - aide_verify_ext_attributes
+  - low_complexity
+  - low_disruption
+  - low_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Ensure the xattrs rule is present when aide is installed.
+  replace:
+    path: /etc/aide.conf
+    regexp: (^\s*{{ item }}\s*=\s*)(?!.*xattrs)([^\s]*)
+    replace: \g<1>\g<2>+xattrs
+  when:
+  - aide_verify_ext_attributes | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - low_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '''aide'' in ansible_facts.packages'
+  with_items: '{{ find_rules_groups_results.stdout_lines | map(''trim'') | list }}'
+  tags:
+  - CCE-83439-0
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-SI-7
+  - NIST-800-53-SI-7(1)
+  - aide_verify_ext_attributes
+  - low_complexity
+  - low_disruption
+  - low_severity
   - no_reboot_needed
   - restrict_strategy
 
@@ -1398,12 +1610,12 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
 
-- name: Test for crypto_policy group
-  command: grep '^\s*\[\s*crypto_policy\s*]' /etc/pki/tls/openssl.cnf
+- name: Configure OpenSSL library to use System Crypto Policy - Search for crypto_policy Section
+  ansible.builtin.find:
+    paths: /etc/pki/tls
+    patterns: openssl.cnf
+    contains: ^\s*\[\s*crypto_policy\s*]
   register: test_crypto_policy_group
-  failed_when: test_crypto_policy_group.rc not in [0, 1]
-  changed_when: false
-  check_mode: false
   tags:
   - CCE-83452-3
   - NIST-800-53-AC-17(2)
@@ -1429,8 +1641,39 @@
   - no_reboot_needed | bool
   - unknown_strategy | bool
 
-- name: Add .include for opensslcnf.config to crypto_policy section
-  lineinfile:
+- name: Configure OpenSSL library to use System Crypto Policy - Search for crypto_policy Section Together With .include Directive
+  ansible.builtin.find:
+    paths: /etc/pki/tls
+    patterns: openssl.cnf
+    contains: ^\s*\.include\s*(?:=\s*)?/etc/crypto-policies/back-ends/opensslcnf.config$
+  register: test_crypto_policy_include_directive
+  tags:
+  - CCE-83452-3
+  - NIST-800-53-AC-17(2)
+  - NIST-800-53-AC-17(a)
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-MA-4(6)
+  - NIST-800-53-SC-12(2)
+  - NIST-800-53-SC-12(3)
+  - NIST-800-53-SC-13
+  - PCI-DSS-Req-2.2
+  - PCI-DSSv4-2.2
+  - configure_openssl_crypto_policy
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - unknown_strategy
+  when:
+  - configure_openssl_crypto_policy | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - unknown_strategy | bool
+
+- name: '{{ rule_title }} - Add .include Line for opensslcnf.config File in crypto_policy Section'
+  ansible.builtin.lineinfile:
     create: true
     insertafter: ^\s*\[\s*crypto_policy\s*]\s*
     line: .include = /etc/crypto-policies/back-ends/opensslcnf.config
@@ -1442,8 +1685,8 @@
   - medium_severity | bool
   - no_reboot_needed | bool
   - unknown_strategy | bool
-  - test_crypto_policy_group.stdout is defined
-  - test_crypto_policy_group.stdout | length > 0
+  - test_crypto_policy_group.matched > 0
+  - test_crypto_policy_include_directive.matched == 0
   tags:
   - CCE-83452-3
   - NIST-800-53-AC-17(2)
@@ -1462,8 +1705,9 @@
   - no_reboot_needed
   - unknown_strategy
 
-- name: Add crypto_policy group and set include opensslcnf.config
-  lineinfile:
+- name: Configure OpenSSL library to use System Crypto Policy - Add crypto_policy Section With .include for opensslcnf.config
+    File
+  ansible.builtin.lineinfile:
     create: true
     line: '[crypto_policy]
 
@@ -1476,8 +1720,7 @@
   - medium_severity | bool
   - no_reboot_needed | bool
   - unknown_strategy | bool
-  - test_crypto_policy_group.stdout is defined
-  - test_crypto_policy_group.stdout | length < 1
+  - test_crypto_policy_group.matched == 0
   tags:
   - CCE-83452-3
   - NIST-800-53-AC-17(2)
@@ -1523,6 +1766,50 @@
   - medium_disruption | bool
   - medium_severity | bool
   - reboot_required | bool
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-87295-2
+  - PCI-DSS-Req-6.2
+  - PCI-DSSv4-6.3.3
+  - dconf_db_up_to_date
+  - high_severity
+  - low_complexity
+  - medium_disruption
+  - no_reboot_needed
+  - unknown_strategy
+  when:
+  - dconf_db_up_to_date | bool
+  - high_severity | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - no_reboot_needed | bool
+  - unknown_strategy | bool
+
+- name: Run dconf update
+  ansible.builtin.command:
+    cmd: dconf update
+  when:
+  - dconf_db_up_to_date | bool
+  - high_severity | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - no_reboot_needed | bool
+  - unknown_strategy | bool
+  - '"gdm" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-87295-2
+  - PCI-DSS-Req-6.2
+  - PCI-DSSv4-6.3.3
+  - dconf_db_up_to_date
+  - high_severity
+  - low_complexity
+  - medium_disruption
+  - no_reboot_needed
+  - unknown_strategy
 
 - name: Gather the package facts
   package_facts:
@@ -3157,12 +3444,9 @@
   - restrict_strategy
   - sudo_require_reauthentication
 
-- name: Find out if /etc/sudoers.d/* files contain Defaults targetpw to be deduplicated
-  find:
-    path: /etc/sudoers.d
-    patterns: '*'
-    contains: ^Defaults targetpw$
-  register: sudoers_d_defaults
+- name: Gather the package facts
+  package_facts:
+    manager: auto
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3180,6 +3464,31 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
   - sudoers_validate_passwd | bool
+
+- name: Find out if /etc/sudoers.d/* files contain Defaults targetpw to be deduplicated
+  find:
+    path: /etc/sudoers.d
+    patterns: '*'
+    contains: ^Defaults targetpw$
+  register: sudoers_d_defaults
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
+  tags:
+  - CCE-83529-8
+  - NIST-800-53-CM-6(b)
+  - NIST-800-53-CM-6.1(iv)
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - sudoers_validate_passwd
 
 - name: Remove found occurrences of Defaults targetpw from /etc/sudoers.d/* files
   lineinfile:
@@ -3187,6 +3496,14 @@
     regexp: ^Defaults targetpw$
     state: absent
   with_items: '{{ sudoers_d_defaults.files }}'
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3197,13 +3514,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Find out if /etc/sudoers.d/* files contain Defaults rootpw to be deduplicated
   find:
@@ -3211,6 +3521,14 @@
     patterns: '*'
     contains: ^Defaults rootpw$
   register: sudoers_d_defaults
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3221,13 +3539,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Remove found occurrences of Defaults rootpw from /etc/sudoers.d/* files
   lineinfile:
@@ -3235,6 +3546,14 @@
     regexp: ^Defaults rootpw$
     state: absent
   with_items: '{{ sudoers_d_defaults.files }}'
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3245,13 +3564,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Find out if /etc/sudoers.d/* files contain Defaults runaspw to be deduplicated
   find:
@@ -3259,6 +3571,14 @@
     patterns: '*'
     contains: ^Defaults runaspw$
   register: sudoers_d_defaults
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3269,13 +3589,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Remove found occurrences of Defaults runaspw from /etc/sudoers.d/* files
   lineinfile:
@@ -3283,6 +3596,14 @@
     regexp: ^Defaults runaspw$
     state: absent
   with_items: '{{ sudoers_d_defaults.files }}'
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3293,13 +3614,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Remove any ocurrences of Defaults targetpw in /etc/sudoers
   lineinfile:
@@ -3308,6 +3622,14 @@
     validate: /usr/sbin/visudo -cf %s
     state: absent
   register: sudoers_file_defaults
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3318,13 +3640,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Remove any ocurrences of Defaults rootpw in /etc/sudoers
   lineinfile:
@@ -3333,6 +3648,14 @@
     validate: /usr/sbin/visudo -cf %s
     state: absent
   register: sudoers_file_defaults
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3343,13 +3666,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Remove any ocurrences of Defaults runaspw in /etc/sudoers
   lineinfile:
@@ -3358,6 +3674,14 @@
     validate: /usr/sbin/visudo -cf %s
     state: absent
   register: sudoers_file_defaults
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3368,13 +3692,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Check for duplicate values
   lineinfile:
@@ -3385,6 +3702,14 @@
   check_mode: true
   changed_when: false
   register: dupes
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3395,13 +3720,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Deduplicate values from /etc/sudoers
   lineinfile:
@@ -3416,6 +3734,7 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
   - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   - dupes.found is defined and dupes.found > 1
   tags:
   - CCE-83529-8
@@ -3435,6 +3754,14 @@
     regexp: ^Defaults !targetpw$
     line: Defaults !targetpw
     state: present
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3445,13 +3772,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Check for duplicate values
   lineinfile:
@@ -3462,6 +3782,14 @@
   check_mode: true
   changed_when: false
   register: dupes
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3472,13 +3800,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Deduplicate values from /etc/sudoers
   lineinfile:
@@ -3493,6 +3814,7 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
   - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   - dupes.found is defined and dupes.found > 1
   tags:
   - CCE-83529-8
@@ -3512,6 +3834,14 @@
     regexp: ^Defaults !rootpw$
     line: Defaults !rootpw
     state: present
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3522,13 +3852,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Check for duplicate values
   lineinfile:
@@ -3539,6 +3862,14 @@
   check_mode: true
   changed_when: false
   register: dupes
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3549,13 +3880,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Deduplicate values from /etc/sudoers
   lineinfile:
@@ -3570,6 +3894,7 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
   - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   - dupes.found is defined and dupes.found > 1
   tags:
   - CCE-83529-8
@@ -3589,6 +3914,14 @@
     regexp: ^Defaults !runaspw$
     line: Defaults !runaspw
     state: present
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - sudoers_validate_passwd | bool
+  - '"sudo" in ansible_facts.packages'
   tags:
   - CCE-83529-8
   - NIST-800-53-CM-6(b)
@@ -3599,13 +3932,6 @@
   - no_reboot_needed
   - restrict_strategy
   - sudoers_validate_passwd
-  when:
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - sudoers_validate_passwd | bool
 
 - name: Ensure gnutls-utils is installed
   package:
@@ -3651,6 +3977,14 @@
   package:
     name: rng-tools
     state: present
+  when:
+  - enable_strategy | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - low_severity | bool
+  - no_reboot_needed | bool
+  - package_rng_tools_installed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   tags:
   - CCE-83504-1
   - enable_strategy
@@ -3659,13 +3993,6 @@
   - low_severity
   - no_reboot_needed
   - package_rng-tools_installed
-  when:
-  - enable_strategy | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - low_severity | bool
-  - no_reboot_needed | bool
-  - package_rng_tools_installed | bool
 
 - name: Ensure subscription-manager is installed
   package:
@@ -4278,7 +4605,7 @@
   - medium_severity
   - no_reboot_needed
 
-- name: Modify the System Login Banner - ensure correct banner
+- name: Modify the System Login Banner - Ensure Correct Banner
   copy:
     dest: /etc/issue
     content: '{{ login_banner_text | regex_replace("^\^(.*)\$$", "\1") | regex_replace("^\((.*\.)\|.*\)$", "\1") | regex_replace("\[\\s\\n\]\+","
@@ -4404,6 +4731,211 @@
   - medium_severity
   - no_reboot_needed
   - unknown_strategy
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-86529-5
+  - NIST-800-171-3.1.9
+  - NIST-800-53-AC-8(a)
+  - NIST-800-53-AC-8(c)
+  - dconf_gnome_login_banner_text
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - unknown_strategy
+  when:
+  - dconf_gnome_login_banner_text | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - unknown_strategy | bool
+
+- name: Set the GNOME3 Login Warning Banner Text
+  file:
+    path: /etc/dconf/db/{{ item }}
+    owner: root
+    group: root
+    mode: 493
+    state: directory
+  with_items:
+  - distro.d
+  - distro.d/locks
+  when:
+  - dconf_gnome_login_banner_text | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - unknown_strategy | bool
+  - '"gdm" in ansible_facts.packages'
+  tags:
+  - CCE-86529-5
+  - NIST-800-171-3.1.9
+  - NIST-800-53-AC-8(a)
+  - NIST-800-53-AC-8(c)
+  - dconf_gnome_login_banner_text
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - unknown_strategy
+
+- name: Set the GNOME3 Login Warning Banner Text
+  file:
+    path: /etc/dconf/db/distro.d/{{ item }}
+    owner: root
+    group: root
+    mode: 420
+    state: touch
+  with_items:
+  - 00-security-settings
+  - locks/00-security-settings-lock
+  when:
+  - dconf_gnome_login_banner_text | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - unknown_strategy | bool
+  - '"gdm" in ansible_facts.packages'
+  tags:
+  - CCE-86529-5
+  - NIST-800-171-3.1.9
+  - NIST-800-53-AC-8(a)
+  - NIST-800-53-AC-8(c)
+  - dconf_gnome_login_banner_text
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - unknown_strategy
+
+- name: Set the GNOME3 Login Warning Banner Text
+  ini_file:
+    dest: /etc/dconf/db/distro.d/00-security-settings
+    section: org/gnome/login-screen
+    option: banner-message-text
+    value: '''{{ login_banner_text | regex_replace("^\^(.*)\$$", "\1") | regex_replace("^\((.*\.)\|.*\)$", "\1") | regex_replace("\[\\s\\n\]\+","
+      ") | regex_replace("\(\?:\[\\n\]\+\|\(\?:\\\\n\)\+\)", "(n)*") | regex_replace("\\", "") | regex_replace("\(n\)\*",
+      "\\n") }}'''
+    create: true
+    no_extra_spaces: true
+  when:
+  - dconf_gnome_login_banner_text | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - unknown_strategy | bool
+  - '"gdm" in ansible_facts.packages'
+  tags:
+  - CCE-86529-5
+  - NIST-800-171-3.1.9
+  - NIST-800-53-AC-8(a)
+  - NIST-800-53-AC-8(c)
+  - dconf_gnome_login_banner_text
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - unknown_strategy
+
+- name: Prevent user modification of the GNOME3 Login Warning Banner Text
+  lineinfile:
+    path: /etc/dconf/db/distro.d/locks/00-security-settings-lock
+    regexp: ^/org/gnome/login-screen/banner-message-text$
+    line: /org/gnome/login-screen/banner-message-text
+    create: true
+    state: present
+  when:
+  - dconf_gnome_login_banner_text | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - unknown_strategy | bool
+  - '"gdm" in ansible_facts.packages'
+  tags:
+  - CCE-86529-5
+  - NIST-800-171-3.1.9
+  - NIST-800-53-AC-8(a)
+  - NIST-800-53-AC-8(c)
+  - dconf_gnome_login_banner_text
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - unknown_strategy
+
+- name: Dconf Update
+  command: dconf update
+  when:
+  - dconf_gnome_login_banner_text | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - unknown_strategy | bool
+  - '"gdm" in ansible_facts.packages'
+  tags:
+  - CCE-86529-5
+  - NIST-800-171-3.1.9
+  - NIST-800-53-AC-8(a)
+  - NIST-800-53-AC-8(c)
+  - dconf_gnome_login_banner_text
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - unknown_strategy
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-85967-8
+  - NIST-800-53-IA-11
+  - disallow_bypass_password_sudo
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - disallow_bypass_password_sudo | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Check for pam_succeed_if entry
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/sudo
+    create: false
+    regexp: pam_succeed_if
+    state: absent
+  when:
+  - disallow_bypass_password_sudo | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - '"pam" in ansible_facts.packages'
+  tags:
+  - CCE-85967-8
+  - NIST-800-53-IA-11
+  - disallow_bypass_password_sudo
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
 
 - name: Gather the package facts
   package_facts:
@@ -4845,511 +5377,6 @@
   - low_disruption
   - low_severity
   - no_reboot_needed
-
-- name: Account Lockouts Must Be Logged - Check if system relies on authselect tool
-  ansible.builtin.stat:
-    path: /usr/bin/authselect
-  register: result_authselect_present
-  tags:
-  - CCE-86108-8
-  - NIST-800-53-AC-7 (a)
-  - account_passwords_pam_faillock_audit
-  - low_complexity
-  - low_disruption
-  - medium_severity
-  - no_reboot_needed
-  - restrict_strategy
-  when:
-  - account_passwords_pam_faillock_audit | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-
-- name: Account Lockouts Must Be Logged - Remediation where authselect tool is present
-  block:
-  - name: Account Lockouts Must Be Logged - Check integrity of authselect current profile
-    ansible.builtin.command:
-      cmd: authselect check
-    register: result_authselect_check_cmd
-    changed_when: false
-    failed_when: false
-  - name: Account Lockouts Must Be Logged - Informative message based on the authselect integrity check result
-    ansible.builtin.assert:
-      that:
-      - result_authselect_check_cmd.rc == 0
-      fail_msg:
-      - authselect integrity check failed. Remediation aborted!
-      - This remediation could not be applied because an authselect profile was not selected or the selected profile is not
-        intact.
-      - It is not recommended to manually edit the PAM files when authselect tool is available.
-      - In cases where the default authselect profile does not cover a specific demand, a custom authselect profile is recommended.
-      success_msg:
-      - authselect integrity check passed
-  - name: Account Lockouts Must Be Logged - Get authselect current features
-    ansible.builtin.shell:
-      cmd: authselect current | tail -n+3 | awk '{ print $2 }'
-    register: result_authselect_features
-    changed_when: false
-    when:
-    - result_authselect_check_cmd is success
-  - name: Account Lockouts Must Be Logged - Ensure "with-faillock" feature is enabled using authselect tool
-    ansible.builtin.command:
-      cmd: authselect enable-feature with-faillock
-    register: result_authselect_enable_feature_cmd
-    when:
-    - result_authselect_check_cmd is success
-    - result_authselect_features.stdout is not search("with-faillock")
-  - name: Account Lockouts Must Be Logged - Ensure authselect changes are applied
-    ansible.builtin.command:
-      cmd: authselect apply-changes -b
-    when:
-    - result_authselect_enable_feature_cmd is not skipped
-    - result_authselect_enable_feature_cmd is success
-  when:
-  - account_passwords_pam_faillock_audit | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - result_authselect_present.stat.exists
-  tags:
-  - CCE-86108-8
-  - NIST-800-53-AC-7 (a)
-  - account_passwords_pam_faillock_audit
-  - low_complexity
-  - low_disruption
-  - medium_severity
-  - no_reboot_needed
-  - restrict_strategy
-
-- name: Account Lockouts Must Be Logged - Remediation where authselect tool is not present
-  block:
-  - name: Account Lockouts Must Be Logged - Check if pam_faillock.so is already enabled
-    ansible.builtin.lineinfile:
-      path: /etc/pam.d/system-auth
-      regexp: .*auth.*pam_faillock\.so (preauth|authfail)
-      state: absent
-    check_mode: true
-    changed_when: false
-    register: result_pam_faillock_is_enabled
-  - name: Account Lockouts Must Be Logged - Enable pam_faillock.so preauth editing PAM files
-    ansible.builtin.lineinfile:
-      path: '{{ item }}'
-      line: auth        required      pam_faillock.so preauth
-      insertbefore: ^auth.*sufficient.*pam_unix\.so.*
-      state: present
-    loop:
-    - /etc/pam.d/system-auth
-    - /etc/pam.d/password-auth
-    when:
-    - result_pam_faillock_is_enabled.found == 0
-  - name: Account Lockouts Must Be Logged - Enable pam_faillock.so authfail editing PAM files
-    ansible.builtin.lineinfile:
-      path: '{{ item }}'
-      line: auth        required      pam_faillock.so authfail
-      insertbefore: ^auth.*required.*pam_deny\.so.*
-      state: present
-    loop:
-    - /etc/pam.d/system-auth
-    - /etc/pam.d/password-auth
-    when:
-    - result_pam_faillock_is_enabled.found == 0
-  - name: Account Lockouts Must Be Logged - Enable pam_faillock.so account section editing PAM files
-    ansible.builtin.lineinfile:
-      path: '{{ item }}'
-      line: account     required      pam_faillock.so
-      insertbefore: ^account.*required.*pam_unix\.so.*
-      state: present
-    loop:
-    - /etc/pam.d/system-auth
-    - /etc/pam.d/password-auth
-    when:
-    - result_pam_faillock_is_enabled.found == 0
-  when:
-  - account_passwords_pam_faillock_audit | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - not result_authselect_present.stat.exists
-  tags:
-  - CCE-86108-8
-  - NIST-800-53-AC-7 (a)
-  - account_passwords_pam_faillock_audit
-  - low_complexity
-  - low_disruption
-  - medium_severity
-  - no_reboot_needed
-  - restrict_strategy
-
-- name: Account Lockouts Must Be Logged - Check the presence of /etc/security/faillock.conf file
-  ansible.builtin.stat:
-    path: /etc/security/faillock.conf
-  register: result_faillock_conf_check
-  tags:
-  - CCE-86108-8
-  - NIST-800-53-AC-7 (a)
-  - account_passwords_pam_faillock_audit
-  - low_complexity
-  - low_disruption
-  - medium_severity
-  - no_reboot_needed
-  - restrict_strategy
-  when:
-  - account_passwords_pam_faillock_audit | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-
-- name: Account Lockouts Must Be Logged - Ensure the pam_faillock.so audit parameter in /etc/security/faillock.conf
-  ansible.builtin.lineinfile:
-    path: /etc/security/faillock.conf
-    regexp: ^\s*audit
-    line: audit
-    state: present
-  when:
-  - account_passwords_pam_faillock_audit | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - result_faillock_conf_check.stat.exists
-  tags:
-  - CCE-86108-8
-  - NIST-800-53-AC-7 (a)
-  - account_passwords_pam_faillock_audit
-  - low_complexity
-  - low_disruption
-  - medium_severity
-  - no_reboot_needed
-  - restrict_strategy
-
-- name: Account Lockouts Must Be Logged - Ensure the pam_faillock.so audit parameter not in PAM files
-  block:
-  - name: Account Lockouts Must Be Logged - Check if /etc/pam.d/system-auth file is present
-    ansible.builtin.stat:
-      path: /etc/pam.d/system-auth
-    register: result_pam_file_present
-  - name: Account Lockouts Must Be Logged - Check the proper remediation for the system
-    block:
-    - name: Account Lockouts Must Be Logged - Define the PAM file to be edited as a local fact
-      ansible.builtin.set_fact:
-        pam_file_path: /etc/pam.d/system-auth
-    - name: Account Lockouts Must Be Logged - Check if system relies on authselect tool
-      ansible.builtin.stat:
-        path: /usr/bin/authselect
-      register: result_authselect_present
-    - name: Account Lockouts Must Be Logged - Ensure authselect custom profile is used if authselect is present
-      block:
-      - name: Account Lockouts Must Be Logged - Check integrity of authselect current profile
-        ansible.builtin.command:
-          cmd: authselect check
-        register: result_authselect_check_cmd
-        changed_when: false
-        failed_when: false
-      - name: Account Lockouts Must Be Logged - Informative message based on the authselect integrity check result
-        ansible.builtin.assert:
-          that:
-          - result_authselect_check_cmd.rc == 0
-          fail_msg:
-          - authselect integrity check failed. Remediation aborted!
-          - This remediation could not be applied because an authselect profile was not selected or the selected profile is
-            not intact.
-          - It is not recommended to manually edit the PAM files when authselect tool is available.
-          - In cases where the default authselect profile does not cover a specific demand, a custom authselect profile is
-            recommended.
-          success_msg:
-          - authselect integrity check passed
-      - name: Account Lockouts Must Be Logged - Get authselect current profile
-        ansible.builtin.shell:
-          cmd: authselect current -r | awk '{ print $1 }'
-        register: result_authselect_profile
-        changed_when: false
-        when:
-        - result_authselect_check_cmd is success
-      - name: Account Lockouts Must Be Logged - Define the current authselect profile as a local fact
-        ansible.builtin.set_fact:
-          authselect_current_profile: '{{ result_authselect_profile.stdout }}'
-          authselect_custom_profile: '{{ result_authselect_profile.stdout }}'
-        when:
-        - result_authselect_profile is not skipped
-        - result_authselect_profile.stdout is match("custom/")
-      - name: Account Lockouts Must Be Logged - Define the new authselect custom profile as a local fact
-        ansible.builtin.set_fact:
-          authselect_current_profile: '{{ result_authselect_profile.stdout }}'
-          authselect_custom_profile: custom/hardening
-        when:
-        - result_authselect_profile is not skipped
-        - result_authselect_profile.stdout is not match("custom/")
-      - name: Account Lockouts Must Be Logged - Get authselect current features to also enable them in the custom profile
-        ansible.builtin.shell:
-          cmd: authselect current | tail -n+3 | awk '{ print $2 }'
-        register: result_authselect_features
-        changed_when: false
-        when:
-        - result_authselect_profile is not skipped
-        - authselect_current_profile is not match("custom/")
-      - name: Account Lockouts Must Be Logged - Check if any custom profile with the same name was already created
-        ansible.builtin.stat:
-          path: /etc/authselect/{{ authselect_custom_profile }}
-        register: result_authselect_custom_profile_present
-        changed_when: false
-        when:
-        - authselect_current_profile is not match("custom/")
-      - name: Account Lockouts Must Be Logged - Create an authselect custom profile based on the current profile
-        ansible.builtin.command:
-          cmd: authselect create-profile hardening -b {{ authselect_current_profile }}
-        when:
-        - result_authselect_check_cmd is success
-        - authselect_current_profile is not match("custom/")
-        - not result_authselect_custom_profile_present.stat.exists
-      - name: Account Lockouts Must Be Logged - Ensure authselect changes are applied
-        ansible.builtin.command:
-          cmd: authselect apply-changes -b --backup=before-hardening-custom-profile
-        when:
-        - result_authselect_check_cmd is success
-        - result_authselect_profile is not skipped
-        - authselect_current_profile is not match("custom/")
-        - authselect_custom_profile is not match(authselect_current_profile)
-      - name: Account Lockouts Must Be Logged - Ensure the authselect custom profile is selected
-        ansible.builtin.command:
-          cmd: authselect select {{ authselect_custom_profile }}
-        register: result_pam_authselect_select_profile
-        when:
-        - result_authselect_check_cmd is success
-        - result_authselect_profile is not skipped
-        - authselect_current_profile is not match("custom/")
-        - authselect_custom_profile is not match(authselect_current_profile)
-      - name: Account Lockouts Must Be Logged - Restore the authselect features in the custom profile
-        ansible.builtin.command:
-          cmd: authselect enable-feature {{ item }}
-        loop: '{{ result_authselect_features.stdout_lines }}'
-        register: result_pam_authselect_restore_features
-        when:
-        - result_authselect_profile is not skipped
-        - result_authselect_features is not skipped
-        - result_pam_authselect_select_profile is not skipped
-      - name: Account Lockouts Must Be Logged - Ensure authselect changes are applied
-        ansible.builtin.command:
-          cmd: authselect apply-changes -b --backup=after-hardening-custom-profile
-        when:
-        - result_authselect_check_cmd is success
-        - result_authselect_profile is not skipped
-        - result_pam_authselect_restore_features is not skipped
-      - name: Account Lockouts Must Be Logged - Change the PAM file to be edited according to the custom authselect profile
-        ansible.builtin.set_fact:
-          pam_file_path: /etc/authselect/{{ authselect_custom_profile }}/{{ pam_file_path | basename }}
-      when:
-      - result_authselect_present.stat.exists
-    - name: Account Lockouts Must Be Logged - Ensure the "audit" option from "pam_faillock.so" is not present in {{ pam_file_path
-        }}
-      ansible.builtin.replace:
-        dest: '{{ pam_file_path }}'
-        regexp: (.*auth.*pam_faillock.so.*)\baudit\b=?[0-9a-zA-Z]*(.*)
-        replace: \1\2
-      register: result_pam_option_removal
-    - name: Account Lockouts Must Be Logged - Ensure authselect changes are applied
-      ansible.builtin.command:
-        cmd: authselect apply-changes -b
-      when:
-      - result_authselect_present.stat.exists
-      - result_pam_option_removal is changed
-    when:
-    - result_pam_file_present.stat.exists
-  - name: Account Lockouts Must Be Logged - Check if /etc/pam.d/password-auth file is present
-    ansible.builtin.stat:
-      path: /etc/pam.d/password-auth
-    register: result_pam_file_present
-  - name: Account Lockouts Must Be Logged - Check the proper remediation for the system
-    block:
-    - name: Account Lockouts Must Be Logged - Define the PAM file to be edited as a local fact
-      ansible.builtin.set_fact:
-        pam_file_path: /etc/pam.d/password-auth
-    - name: Account Lockouts Must Be Logged - Check if system relies on authselect tool
-      ansible.builtin.stat:
-        path: /usr/bin/authselect
-      register: result_authselect_present
-    - name: Account Lockouts Must Be Logged - Ensure authselect custom profile is used if authselect is present
-      block:
-      - name: Account Lockouts Must Be Logged - Check integrity of authselect current profile
-        ansible.builtin.command:
-          cmd: authselect check
-        register: result_authselect_check_cmd
-        changed_when: false
-        failed_when: false
-      - name: Account Lockouts Must Be Logged - Informative message based on the authselect integrity check result
-        ansible.builtin.assert:
-          that:
-          - result_authselect_check_cmd.rc == 0
-          fail_msg:
-          - authselect integrity check failed. Remediation aborted!
-          - This remediation could not be applied because an authselect profile was not selected or the selected profile is
-            not intact.
-          - It is not recommended to manually edit the PAM files when authselect tool is available.
-          - In cases where the default authselect profile does not cover a specific demand, a custom authselect profile is
-            recommended.
-          success_msg:
-          - authselect integrity check passed
-      - name: Account Lockouts Must Be Logged - Get authselect current profile
-        ansible.builtin.shell:
-          cmd: authselect current -r | awk '{ print $1 }'
-        register: result_authselect_profile
-        changed_when: false
-        when:
-        - result_authselect_check_cmd is success
-      - name: Account Lockouts Must Be Logged - Define the current authselect profile as a local fact
-        ansible.builtin.set_fact:
-          authselect_current_profile: '{{ result_authselect_profile.stdout }}'
-          authselect_custom_profile: '{{ result_authselect_profile.stdout }}'
-        when:
-        - result_authselect_profile is not skipped
-        - result_authselect_profile.stdout is match("custom/")
-      - name: Account Lockouts Must Be Logged - Define the new authselect custom profile as a local fact
-        ansible.builtin.set_fact:
-          authselect_current_profile: '{{ result_authselect_profile.stdout }}'
-          authselect_custom_profile: custom/hardening
-        when:
-        - result_authselect_profile is not skipped
-        - result_authselect_profile.stdout is not match("custom/")
-      - name: Account Lockouts Must Be Logged - Get authselect current features to also enable them in the custom profile
-        ansible.builtin.shell:
-          cmd: authselect current | tail -n+3 | awk '{ print $2 }'
-        register: result_authselect_features
-        changed_when: false
-        when:
-        - result_authselect_profile is not skipped
-        - authselect_current_profile is not match("custom/")
-      - name: Account Lockouts Must Be Logged - Check if any custom profile with the same name was already created
-        ansible.builtin.stat:
-          path: /etc/authselect/{{ authselect_custom_profile }}
-        register: result_authselect_custom_profile_present
-        changed_when: false
-        when:
-        - authselect_current_profile is not match("custom/")
-      - name: Account Lockouts Must Be Logged - Create an authselect custom profile based on the current profile
-        ansible.builtin.command:
-          cmd: authselect create-profile hardening -b {{ authselect_current_profile }}
-        when:
-        - result_authselect_check_cmd is success
-        - authselect_current_profile is not match("custom/")
-        - not result_authselect_custom_profile_present.stat.exists
-      - name: Account Lockouts Must Be Logged - Ensure authselect changes are applied
-        ansible.builtin.command:
-          cmd: authselect apply-changes -b --backup=before-hardening-custom-profile
-        when:
-        - result_authselect_check_cmd is success
-        - result_authselect_profile is not skipped
-        - authselect_current_profile is not match("custom/")
-        - authselect_custom_profile is not match(authselect_current_profile)
-      - name: Account Lockouts Must Be Logged - Ensure the authselect custom profile is selected
-        ansible.builtin.command:
-          cmd: authselect select {{ authselect_custom_profile }}
-        register: result_pam_authselect_select_profile
-        when:
-        - result_authselect_check_cmd is success
-        - result_authselect_profile is not skipped
-        - authselect_current_profile is not match("custom/")
-        - authselect_custom_profile is not match(authselect_current_profile)
-      - name: Account Lockouts Must Be Logged - Restore the authselect features in the custom profile
-        ansible.builtin.command:
-          cmd: authselect enable-feature {{ item }}
-        loop: '{{ result_authselect_features.stdout_lines }}'
-        register: result_pam_authselect_restore_features
-        when:
-        - result_authselect_profile is not skipped
-        - result_authselect_features is not skipped
-        - result_pam_authselect_select_profile is not skipped
-      - name: Account Lockouts Must Be Logged - Ensure authselect changes are applied
-        ansible.builtin.command:
-          cmd: authselect apply-changes -b --backup=after-hardening-custom-profile
-        when:
-        - result_authselect_check_cmd is success
-        - result_authselect_profile is not skipped
-        - result_pam_authselect_restore_features is not skipped
-      - name: Account Lockouts Must Be Logged - Change the PAM file to be edited according to the custom authselect profile
-        ansible.builtin.set_fact:
-          pam_file_path: /etc/authselect/{{ authselect_custom_profile }}/{{ pam_file_path | basename }}
-      when:
-      - result_authselect_present.stat.exists
-    - name: Account Lockouts Must Be Logged - Ensure the "audit" option from "pam_faillock.so" is not present in {{ pam_file_path
-        }}
-      ansible.builtin.replace:
-        dest: '{{ pam_file_path }}'
-        regexp: (.*auth.*pam_faillock.so.*)\baudit\b=?[0-9a-zA-Z]*(.*)
-        replace: \1\2
-      register: result_pam_option_removal
-    - name: Account Lockouts Must Be Logged - Ensure authselect changes are applied
-      ansible.builtin.command:
-        cmd: authselect apply-changes -b
-      when:
-      - result_authselect_present.stat.exists
-      - result_pam_option_removal is changed
-    when:
-    - result_pam_file_present.stat.exists
-  when:
-  - account_passwords_pam_faillock_audit | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - result_faillock_conf_check.stat.exists
-  tags:
-  - CCE-86108-8
-  - NIST-800-53-AC-7 (a)
-  - account_passwords_pam_faillock_audit
-  - low_complexity
-  - low_disruption
-  - medium_severity
-  - no_reboot_needed
-  - restrict_strategy
-
-- name: Account Lockouts Must Be Logged - Ensure the pam_faillock.so audit parameter in PAM files
-  block:
-  - name: Account Lockouts Must Be Logged - Check if pam_faillock.so audit parameter is already enabled in pam files
-    ansible.builtin.lineinfile:
-      path: /etc/pam.d/system-auth
-      regexp: .*auth.*pam_faillock\.so (preauth|authfail).*audit
-      state: absent
-    check_mode: true
-    changed_when: false
-    register: result_pam_faillock_audit_parameter_is_present
-  - name: Account Lockouts Must Be Logged - Ensure the inclusion of pam_faillock.so preauth audit parameter in auth section
-    ansible.builtin.lineinfile:
-      path: '{{ item }}'
-      backrefs: true
-      regexp: (^\s*auth\s+)([\w\[].*\b)(\s+pam_faillock.so preauth.*)
-      line: \1required\3 audit
-      state: present
-    loop:
-    - /etc/pam.d/system-auth
-    - /etc/pam.d/password-auth
-    when:
-    - result_pam_faillock_audit_parameter_is_present.found == 0
-  when:
-  - account_passwords_pam_faillock_audit | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - restrict_strategy | bool
-  - not result_faillock_conf_check.stat.exists
-  tags:
-  - CCE-86108-8
-  - NIST-800-53-AC-7 (a)
-  - account_passwords_pam_faillock_audit
-  - low_complexity
-  - low_disruption
-  - medium_severity
-  - no_reboot_needed
-  - restrict_strategy
 
 - name: Gather the package facts
   package_facts:
@@ -12532,6 +12559,50 @@
   - no_reboot_needed
   - set_password_hashing_algorithm_systemauth
 
+- name: Set Password Hashing Rounds in /etc/login.defs - Ensure SHA_CRYPT_MIN_ROUNDS has Minimum Value of 5000
+  ansible.builtin.replace:
+    path: /etc/login.defs
+    regexp: (^\s*SHA_CRYPT_MIN_ROUNDS\s+)(?!(?:[5-9]\d{3,}|\d{5,}))\S*(\s*$)
+    replace: \g<1>5000\g<2>
+    backup: false
+  tags:
+  - CCE-89708-2
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_password_hashing_min_rounds_logindefs
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_password_hashing_min_rounds_logindefs | bool
+
+- name: Set Password Hashing Rounds in /etc/login.defs - Ensure SHA_CRYPT_MAX_ROUNDS has Minimum Value of 5000
+  ansible.builtin.replace:
+    path: /etc/login.defs
+    regexp: (^\s*SHA_CRYPT_MAX_ROUNDS\s+)(?!(?:[5-9]\d{3,}|\d{5,}))\S*(\s*$)
+    replace: \g<1>5000\g<2>
+    backup: false
+  tags:
+  - CCE-89708-2
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  - set_password_hashing_min_rounds_logindefs
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - set_password_hashing_min_rounds_logindefs | bool
+
 - name: Block Disable service debug-shell
   block:
   - name: Disable service debug-shell
@@ -12565,7 +12636,7 @@
   - service_debug-shell_disabled
 
 - name: Unit Socket Exists - debug-shell.socket
-  command: systemctl list-unit-files debug-shell.socket
+  command: systemctl -q list-unit-files debug-shell.socket
   register: socket_file_exists
   changed_when: false
   failed_when: socket_file_exists.rc not in [0, 1]
@@ -12603,7 +12674,7 @@
   - no_reboot_needed | bool
   - service_debug_shell_disabled | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
-  - '"debug-shell.socket" in socket_file_exists.stdout_lines[1]'
+  - socket_file_exists.stdout_lines is search("debug-shell.socket",multiline=True)
   tags:
   - CCE-90724-6
   - NIST-800-171-3.4.5
@@ -12614,6 +12685,84 @@
   - medium_severity
   - no_reboot_needed
   - service_debug-shell_disabled
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-90308-8
+  - NIST-800-171-3.4.5
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-CM-6(a)
+  - disable_ctrlaltdel_burstaction
+  - disable_strategy
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  when:
+  - disable_ctrlaltdel_burstaction | bool
+  - disable_strategy | bool
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+
+- name: Disable Ctrl-Alt-Del Burst Action
+  lineinfile:
+    dest: /etc/systemd/system.conf
+    state: present
+    regexp: ^CtrlAltDelBurstAction
+    line: CtrlAltDelBurstAction=none
+    create: true
+  when:
+  - disable_ctrlaltdel_burstaction | bool
+  - disable_strategy | bool
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '"systemd" in ansible_facts.packages'
+  tags:
+  - CCE-90308-8
+  - NIST-800-171-3.4.5
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-CM-6(a)
+  - disable_ctrlaltdel_burstaction
+  - disable_strategy
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+
+- name: Disable Ctrl-Alt-Del Reboot Activation
+  systemd:
+    name: ctrl-alt-del.target
+    force: true
+    masked: true
+    state: stopped
+  when:
+  - disable_ctrlaltdel_reboot | bool
+  - disable_strategy | bool
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-86667-3
+  - NIST-800-171-3.4.5
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - disable_ctrlaltdel_reboot
+  - disable_strategy
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
 
 - name: Gather the package facts
   package_facts:
@@ -12651,6 +12800,7 @@
   - medium_severity | bool
   - reboot_required | bool
   - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - '"grub2-common" in ansible_facts.packages'
   tags:
   - CCE-87114-5
@@ -12677,6 +12827,7 @@
   - medium_severity | bool
   - reboot_required | bool
   - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - '"grub2-common" in ansible_facts.packages'
   tags:
   - CCE-87114-5
@@ -12700,6 +12851,7 @@
   - medium_severity | bool
   - reboot_required | bool
   - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - '"grub2-common" in ansible_facts.packages'
   tags:
   - CCE-87114-5
@@ -12723,6 +12875,7 @@
   - medium_severity | bool
   - reboot_required | bool
   - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - '"grub2-common" in ansible_facts.packages'
   tags:
   - CCE-87114-5
@@ -12848,6 +13001,7 @@
   - low_disruption | bool
   - medium_severity | bool
   - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - '"tmux" in ansible_facts.packages'
   tags:
   - CCE-90586-9
@@ -12871,6 +13025,7 @@
   - low_disruption | bool
   - medium_severity | bool
   - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - '"tmux" in ansible_facts.packages'
   tags:
   - CCE-90586-9
@@ -12894,6 +13049,7 @@
   - low_disruption | bool
   - medium_severity | bool
   - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - '"tmux" in ansible_facts.packages'
   - tmux_in_bashrc is defined and tmux_in_bashrc.matched == 0
   - tmux_in_profile_d is defined and tmux_in_profile_d.matched == 0
@@ -13112,6 +13268,77 @@
   - no_reboot_needed
   - service_pcscd_enabled
 
+- name: Check existence of opensc conf
+  stat:
+    path: /etc/opensc-{{ ansible_architecture }}.conf
+  register: opensc_conf_cd
+  when:
+  - configure_opensc_card_drivers | bool
+  - configure_strategy | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-89122-6
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-IA-2(1)
+  - NIST-800-53-IA-2(11)
+  - NIST-800-53-IA-2(2)
+  - NIST-800-53-IA-2(3)
+  - NIST-800-53-IA-2(4)
+  - NIST-800-53-IA-2(6)
+  - NIST-800-53-IA-2(7)
+  - PCI-DSS-Req-8.3
+  - PCI-DSSv4-8.4
+  - configure_opensc_card_drivers
+  - configure_strategy
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: Configure smartcard driver block
+  block:
+  - name: Check if card_drivers is defined
+    command: /usr/bin/opensc-tool -G app:default:card_drivers
+    changed_when: false
+    register: card_drivers
+  - name: Configure opensc Smart Card Drivers
+    command: '/usr/bin/opensc-tool -S app:default:card_drivers:{{ var_smartcard_drivers }}
+
+      '
+    when:
+    - card_drivers.stdout != var_smartcard_drivers
+  when:
+  - configure_opensc_card_drivers | bool
+  - configure_strategy | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - opensc_conf_cd.stat.exists
+  tags:
+  - CCE-89122-6
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-IA-2(1)
+  - NIST-800-53-IA-2(11)
+  - NIST-800-53-IA-2(2)
+  - NIST-800-53-IA-2(3)
+  - NIST-800-53-IA-2(4)
+  - NIST-800-53-IA-2(6)
+  - NIST-800-53-IA-2(7)
+  - PCI-DSS-Req-8.3
+  - PCI-DSSv4-8.4
+  - configure_opensc_card_drivers
+  - configure_strategy
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
 - name: Gather the package facts
   package_facts:
     manager: auto
@@ -13320,6 +13547,55 @@
   - NIST-800-53-IA-5(1)(d)
   - NIST-800-53-IA-5(f)
   - accounts_password_set_max_life_existing
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Collect users with not correct minimum time period between password changes
+  command: 'awk -F'':'' ''(/^[^:]+:[^!*]/ && ($4 < {{ var_accounts_minimum_age_login_defs }} || $4 == "")) {print $1}'' /etc/shadow
+
+    '
+  register: user_names
+  tags:
+  - CCE-89069-9
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-IA-5(1)(d)
+  - NIST-800-53-IA-5(f)
+  - accounts_password_set_min_life_existing
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - accounts_password_set_min_life_existing | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Change the minimum time period between password changes
+  command: 'chage -m {{ var_accounts_minimum_age_login_defs }} {{ item }}
+
+    '
+  with_items: '{{ user_names.stdout_lines }}'
+  when:
+  - accounts_password_set_min_life_existing | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - user_names.stdout_lines | length > 0
+  tags:
+  - CCE-89069-9
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-IA-5(1)(d)
+  - NIST-800-53-IA-5(f)
+  - accounts_password_set_min_life_existing
   - low_complexity
   - low_disruption
   - medium_severity
@@ -14024,6 +14300,62 @@
   - no_reboot_needed
   - restrict_strategy
 
+- name: Get all /etc/passwd file entries
+  getent:
+    database: passwd
+    split: ':'
+  tags:
+  - CCE-83624-7
+  - NIST-800-171-3.1.1
+  - NIST-800-171-3.1.5
+  - NIST-800-53-AC-6(5)
+  - NIST-800-53-IA-2
+  - NIST-800-53-IA-4(b)
+  - PCI-DSS-Req-8.5
+  - PCI-DSSv4-8.2.2
+  - PCI-DSSv4-8.2.3
+  - accounts_no_uid_except_zero
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - accounts_no_uid_except_zero | bool
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Lock the password of the user accounts other than root with uid 0
+  command: passwd -l {{ item.key }}
+  loop: '{{ getent_passwd | dict2items | rejectattr(''key'', ''search'', ''root'') | list }}'
+  when:
+  - accounts_no_uid_except_zero | bool
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - item.value.1  == '0'
+  tags:
+  - CCE-83624-7
+  - NIST-800-171-3.1.1
+  - NIST-800-171-3.1.5
+  - NIST-800-53-AC-6(5)
+  - NIST-800-53-IA-2
+  - NIST-800-53-IA-4(b)
+  - PCI-DSS-Req-8.5
+  - PCI-DSSv4-8.2.2
+  - PCI-DSSv4-8.2.3
+  - accounts_no_uid_except_zero
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - restrict_strategy
+
 - name: Ensure that System Accounts Do Not Run a Shell Upon Login - Get All Local Users From /etc/passwd
   ansible.builtin.getent:
     database: passwd
@@ -14144,6 +14476,67 @@
   - no_reboot_needed
   - restrict_strategy
   - use_pam_wheel_for_su
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-88983-2
+  - accounts_have_homedir_login_defs
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - accounts_have_homedir_login_defs | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Ensure new users receive home directories
+  block:
+  - name: Check for duplicate values
+    lineinfile:
+      path: /etc/login.defs
+      create: false
+      regexp: ^\s*CREATE_HOME\s+
+      state: absent
+    check_mode: true
+    changed_when: false
+    register: dupes
+  - name: Deduplicate values from /etc/login.defs
+    lineinfile:
+      path: /etc/login.defs
+      create: false
+      regexp: ^\s*CREATE_HOME\s+
+      state: absent
+    when: dupes.found is defined and dupes.found > 1
+  - name: Insert correct line to /etc/login.defs
+    lineinfile:
+      path: /etc/login.defs
+      create: true
+      regexp: ^\s*CREATE_HOME\s+
+      line: CREATE_HOME yes
+      state: present
+  when:
+  - accounts_have_homedir_login_defs | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - '"shadow-utils" in ansible_facts.packages'
+  tags:
+  - CCE-88983-2
+  - accounts_have_homedir_login_defs
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
 
 - name: Gather the package facts
   package_facts:
@@ -14563,6 +14956,73 @@
   - medium_severity
   - no_reboot_needed
   - restrict_strategy
+
+- name: Ensure All User Initialization Files Have Mode 0740 Or Less Permissive - Gather User Info
+  ansible.builtin.getent:
+    database: passwd
+  tags:
+  - CCE-83637-9
+  - file_permission_user_init_files
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - file_permission_user_init_files | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Ensure All User Initialization Files Have Mode 0740 Or Less Permissive - Find Init Files
+  ansible.builtin.find:
+    paths: '{{ item.value[4] }}'
+    pattern: '{{ var_user_initialization_files_regex }}'
+    hidden: true
+    use_regex: true
+  with_dict: '{{ ansible_facts.getent_passwd }}'
+  when:
+  - file_permission_user_init_files | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - item.value[4] != "/sbin/nologin"
+  - item.key not in ["nobody", "nfsnobody"]
+  - item.value[1] | int >= 1000
+  register: found_init_files
+  tags:
+  - CCE-83637-9
+  - file_permission_user_init_files
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Ensure All User Initialization Files Have Mode 0740 Or Less Permissive - Fix Init Files Permissions
+  ansible.builtin.file:
+    path: '{{ item.1.path }}'
+    mode: u-s,g-wxs,o=
+  loop: '{{ q(''ansible.builtin.subelements'', found_init_files.results, ''files'', {''skip_missing'': True}) }}'
+  tags:
+  - CCE-83637-9
+  - file_permission_user_init_files
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - file_permission_user_init_files | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
 
 - name: Get all local users from /etc/passwd
   ansible.builtin.getent:
@@ -38316,6 +38776,59 @@
   - restrict_strategy
   - rsyslog_remote_loghost
 
+- name: Ensure System is Not Acting as a Network Sniffer - Gather network interfaces
+  ansible.builtin.command:
+    cmd: ip link show
+  register: network_interfaces
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - network_sniffer_disabled | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-83996-9
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-CM-7(2)
+  - NIST-800-53-CM-7(a)
+  - NIST-800-53-CM-7(b)
+  - NIST-800-53-MA-3
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - network_sniffer_disabled
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Ensure System is Not Acting as a Network Sniffer - Disable promiscuous mode
+  ansible.builtin.command:
+    cmd: ip link set dev {{ item.split(':')[1] }} multicast off promisc off
+  loop: '{{ network_interfaces.stdout_lines }}'
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - network_sniffer_disabled | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - item.split(':') | length == 3
+  tags:
+  - CCE-83996-9
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-CM-7(2)
+  - NIST-800-53-CM-7(a)
+  - NIST-800-53-CM-7(b)
+  - NIST-800-53-MA-3
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - network_sniffer_disabled
+  - no_reboot_needed
+  - restrict_strategy
+
 - name: Ensure firewalld is installed
   package:
     name: firewalld
@@ -38338,6 +38851,32 @@
   - no_reboot_needed
   - package_firewalld_installed
 
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-90833-5
+  - NIST-800-171-3.1.3
+  - NIST-800-171-3.4.7
+  - NIST-800-53-AC-4
+  - NIST-800-53-CA-3(5)
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-CM-7(b)
+  - NIST-800-53-SC-7(21)
+  - enable_strategy
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - service_firewalld_enabled
+  when:
+  - enable_strategy | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - service_firewalld_enabled | bool
+
 - name: Enable service firewalld
   block:
   - name: Gather the package facts
@@ -38359,6 +38898,7 @@
   - no_reboot_needed | bool
   - service_firewalld_enabled | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '"firewalld" in ansible_facts.packages'
   tags:
   - CCE-90833-5
   - NIST-800-171-3.1.3
@@ -40490,6 +41030,224 @@
   - no_reboot_needed
   - unknown_strategy
   - wireless_disable_interfaces
+
+- name: Ensure All World-Writable Directories Are Owned by root User - Define Excluded (Non-Local) File Systems and Paths
+  ansible.builtin.set_fact:
+    excluded_fstypes:
+    - afs
+    - ceph
+    - cifs
+    - smb3
+    - smbfs
+    - sshfs
+    - ncpfs
+    - ncp
+    - nfs
+    - nfs4
+    - gfs
+    - gfs2
+    - glusterfs
+    - gpfs
+    - pvfs2
+    - ocfs2
+    - lustre
+    - davfs
+    - fuse.sshfs
+    excluded_paths:
+    - dev
+    - proc
+    - run
+    - sys
+    search_paths: []
+  tags:
+  - CCE-83903-5
+  - dir_perms_world_writable_root_owned
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_root_owned | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Ensure All World-Writable Directories Are Owned by root User - Find Relevant Root Directories Ignoring Pre-Defined
+    Excluded Paths
+  ansible.builtin.find:
+    paths: /
+    file_type: directory
+    excludes: '{{ excluded_paths }}'
+    hidden: true
+    recurse: false
+  register: result_relevant_root_dirs
+  tags:
+  - CCE-83903-5
+  - dir_perms_world_writable_root_owned
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_root_owned | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Ensure All World-Writable Directories Are Owned by root User - Include Relevant Root Directories in a List of Paths
+    to be Searched
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.path]) }}'
+  loop: '{{ result_relevant_root_dirs.files }}'
+  tags:
+  - CCE-83903-5
+  - dir_perms_world_writable_root_owned
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_root_owned | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Ensure All World-Writable Directories Are Owned by root User - Increment Search Paths List with Local Partitions Mount
+    Points
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.mount]) }}'
+  loop: '{{ ansible_mounts }}'
+  when:
+  - dir_perms_world_writable_root_owned | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - item.fstype not in excluded_fstypes
+  - item.mount != '/'
+  tags:
+  - CCE-83903-5
+  - dir_perms_world_writable_root_owned
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Ensure All World-Writable Directories Are Owned by root User - Increment Search Paths List with Local NFS File System
+    Targets
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.device.split('':'')[1]]) }}'
+  loop: '{{ ansible_mounts }}'
+  when:
+  - dir_perms_world_writable_root_owned | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - item.device is search("localhost:")
+  tags:
+  - CCE-83903-5
+  - dir_perms_world_writable_root_owned
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Ensure All World-Writable Directories Are Owned by root User - Define Rule Specific Facts
+  ansible.builtin.set_fact:
+    world_writable_dirs: []
+  tags:
+  - CCE-83903-5
+  - dir_perms_world_writable_root_owned
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_root_owned | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Ensure All World-Writable Directories Are Owned by root User - Find All Uncompliant Directories in Local File Systems
+  ansible.builtin.command:
+    cmd: find {{ item }} -xdev -type d -perm -0002 -uid +0
+  loop: '{{ search_paths }}'
+  changed_when: false
+  register: result_found_dirs
+  tags:
+  - CCE-83903-5
+  - dir_perms_world_writable_root_owned
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_root_owned | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Ensure All World-Writable Directories Are Owned by root User - Create List of World Writable Directories Not Owned
+    by root
+  ansible.builtin.set_fact:
+    world_writable_dirs: '{{ world_writable_dirs | union(item.stdout_lines) | list }}'
+  loop: '{{ result_found_dirs.results }}'
+  tags:
+  - CCE-83903-5
+  - dir_perms_world_writable_root_owned
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_root_owned | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Ensure All World-Writable Directories Are Owned by root User - Ensure root Ownership on Local World Writable Directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    owner: root
+  loop: '{{ world_writable_dirs }}'
+  tags:
+  - CCE-83903-5
+  - dir_perms_world_writable_root_owned
+  - low_complexity
+  - medium_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_root_owned | bool
+  - low_complexity | bool
+  - medium_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
 
 - name: Get all world-writable directories with no sticky bits set
   shell: 'set -o pipefail
@@ -42982,7 +43740,7 @@
   - no_reboot_needed | bool
 
 - name: Find /lib/ file(s) matching ^.*$ recursively
-  command: find -H /lib/  -type f ! -gid 0 -regex "^.*$"
+  command: find -H /lib/  -type f ! -group 0 -regex "^.*$"
   register: files_found
   changed_when: false
   failed_when: false
@@ -43031,7 +43789,7 @@
   - root_permissions_syslibrary_files | bool
 
 - name: Find /lib64/ file(s) matching ^.*$ recursively
-  command: find -H /lib64/  -type f ! -gid 0 -regex "^.*$"
+  command: find -H /lib64/  -type f ! -group 0 -regex "^.*$"
   register: files_found
   changed_when: false
   failed_when: false
@@ -43080,7 +43838,7 @@
   - root_permissions_syslibrary_files | bool
 
 - name: Find /usr/lib/ file(s) matching ^.*$ recursively
-  command: find -H /usr/lib/  -type f ! -gid 0 -regex "^.*$"
+  command: find -H /usr/lib/  -type f ! -group 0 -regex "^.*$"
   register: files_found
   changed_when: false
   failed_when: false
@@ -43129,7 +43887,7 @@
   - root_permissions_syslibrary_files | bool
 
 - name: Find /usr/lib64/ file(s) matching ^.*$ recursively
-  command: find -H /usr/lib64/  -type f ! -gid 0 -regex "^.*$"
+  command: find -H /usr/lib64/  -type f ! -group 0 -regex "^.*$"
   register: files_found
   changed_when: false
   failed_when: false
@@ -43213,7 +43971,7 @@
   - service_autofs_disabled
 
 - name: Unit Socket Exists - autofs.socket
-  command: systemctl list-unit-files autofs.socket
+  command: systemctl -q list-unit-files autofs.socket
   register: socket_file_exists
   changed_when: false
   failed_when: socket_file_exists.rc not in [0, 1]
@@ -43254,7 +44012,7 @@
   - no_reboot_needed | bool
   - service_autofs_disabled | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
-  - '"autofs.socket" in socket_file_exists.stdout_lines[1]'
+  - socket_file_exists.stdout_lines is search("autofs.socket",multiline=True)
   tags:
   - CCE-83850-8
   - NIST-800-171-3.4.6
@@ -44159,7 +44917,8 @@
   - mount_option_home_nodev | bool
   - no_reboot_needed | bool
   - unknown_severity | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   tags:
   - CCE-83871-4
   - configure_strategy
@@ -44182,7 +44941,8 @@
   - mount_option_home_nodev | bool
   - no_reboot_needed | bool
   - unknown_severity | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   - device_name.stdout is defined and device_name.stdout_lines is defined
   - (device_name.stdout | length > 0)
   tags:
@@ -44213,7 +44973,8 @@
   - mount_option_home_nodev | bool
   - no_reboot_needed | bool
   - unknown_severity | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   - ("--fstab" | length == 0)
   - (device_name.stdout | length == 0)
   tags:
@@ -44235,7 +44996,8 @@
   - mount_option_home_nodev | bool
   - no_reboot_needed | bool
   - unknown_severity | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   - mount_info is defined and "nodev" not in mount_info.options
   tags:
   - CCE-83871-4
@@ -44260,7 +45022,8 @@
   - mount_option_home_nodev | bool
   - no_reboot_needed | bool
   - unknown_severity | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   - (device_name.stdout is defined and (device_name.stdout | length > 0)) or ("--fstab" | length == 0)
   tags:
   - CCE-83871-4
@@ -44412,7 +45175,8 @@
   - medium_severity | bool
   - mount_option_home_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   tags:
   - CCE-83894-6
   - NIST-800-53-AC-6
@@ -44441,7 +45205,8 @@
   - medium_severity | bool
   - mount_option_home_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   - device_name.stdout is defined and device_name.stdout_lines is defined
   - (device_name.stdout | length > 0)
   tags:
@@ -44478,7 +45243,8 @@
   - medium_severity | bool
   - mount_option_home_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   - ("--fstab" | length == 0)
   - (device_name.stdout | length == 0)
   tags:
@@ -44506,7 +45272,8 @@
   - medium_severity | bool
   - mount_option_home_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   - mount_info is defined and "nosuid" not in mount_info.options
   tags:
   - CCE-83894-6
@@ -44537,7 +45304,8 @@
   - medium_severity | bool
   - mount_option_home_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/home" in ansible_mounts
+    | map(attribute="mount") | list )
   - (device_name.stdout is defined and (device_name.stdout | length > 0)) or ("--fstab" | length == 0)
   tags:
   - CCE-83894-6
@@ -45164,7 +45932,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   tags:
   - CCE-83882-1
   - NIST-800-53-AC-6
@@ -45193,7 +45962,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - device_name.stdout is defined and device_name.stdout_lines is defined
   - (device_name.stdout | length > 0)
   tags:
@@ -45230,7 +46000,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - ("--fstab" | length == 0)
   - (device_name.stdout | length == 0)
   tags:
@@ -45258,7 +46029,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - mount_info is defined and "nodev" not in mount_info.options
   tags:
   - CCE-83882-1
@@ -45289,7 +46061,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - (device_name.stdout is defined and (device_name.stdout | length > 0)) or ("--fstab" | length == 0)
   tags:
   - CCE-83882-1
@@ -45318,7 +46091,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   tags:
   - CCE-83878-9
   - NIST-800-53-AC-6
@@ -45347,7 +46121,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - device_name.stdout is defined and device_name.stdout_lines is defined
   - (device_name.stdout | length > 0)
   tags:
@@ -45384,7 +46159,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - ("--fstab" | length == 0)
   - (device_name.stdout | length == 0)
   tags:
@@ -45412,7 +46188,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - mount_info is defined and "noexec" not in mount_info.options
   tags:
   - CCE-83878-9
@@ -45443,7 +46220,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - (device_name.stdout is defined and (device_name.stdout | length > 0)) or ("--fstab" | length == 0)
   tags:
   - CCE-83878-9
@@ -45472,7 +46250,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   tags:
   - CCE-83893-8
   - NIST-800-53-AC-6
@@ -45501,7 +46280,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - device_name.stdout is defined and device_name.stdout_lines is defined
   - (device_name.stdout | length > 0)
   tags:
@@ -45538,7 +46318,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - ("--fstab" | length == 0)
   - (device_name.stdout | length == 0)
   tags:
@@ -45566,7 +46347,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - mount_info is defined and "nosuid" not in mount_info.options
   tags:
   - CCE-83893-8
@@ -45597,7 +46379,8 @@
   - medium_severity | bool
   - mount_option_var_log_audit_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log/audit" in ansible_mounts
+    | map(attribute="mount") | list )
   - (device_name.stdout is defined and (device_name.stdout | length > 0)) or ("--fstab" | length == 0)
   tags:
   - CCE-83893-8
@@ -45626,7 +46409,8 @@
   - medium_severity | bool
   - mount_option_var_log_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   tags:
   - CCE-83886-2
   - NIST-800-53-AC-6
@@ -45655,7 +46439,8 @@
   - medium_severity | bool
   - mount_option_var_log_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - device_name.stdout is defined and device_name.stdout_lines is defined
   - (device_name.stdout | length > 0)
   tags:
@@ -45692,7 +46477,8 @@
   - medium_severity | bool
   - mount_option_var_log_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - ("--fstab" | length == 0)
   - (device_name.stdout | length == 0)
   tags:
@@ -45720,7 +46506,8 @@
   - medium_severity | bool
   - mount_option_var_log_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - mount_info is defined and "nodev" not in mount_info.options
   tags:
   - CCE-83886-2
@@ -45751,7 +46538,8 @@
   - medium_severity | bool
   - mount_option_var_log_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - (device_name.stdout is defined and (device_name.stdout | length > 0)) or ("--fstab" | length == 0)
   tags:
   - CCE-83886-2
@@ -45780,7 +46568,8 @@
   - medium_severity | bool
   - mount_option_var_log_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   tags:
   - CCE-83887-0
   - NIST-800-53-AC-6
@@ -45809,7 +46598,8 @@
   - medium_severity | bool
   - mount_option_var_log_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - device_name.stdout is defined and device_name.stdout_lines is defined
   - (device_name.stdout | length > 0)
   tags:
@@ -45846,7 +46636,8 @@
   - medium_severity | bool
   - mount_option_var_log_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - ("--fstab" | length == 0)
   - (device_name.stdout | length == 0)
   tags:
@@ -45874,7 +46665,8 @@
   - medium_severity | bool
   - mount_option_var_log_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - mount_info is defined and "noexec" not in mount_info.options
   tags:
   - CCE-83887-0
@@ -45905,7 +46697,8 @@
   - medium_severity | bool
   - mount_option_var_log_noexec | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - (device_name.stdout is defined and (device_name.stdout | length > 0)) or ("--fstab" | length == 0)
   tags:
   - CCE-83887-0
@@ -45934,7 +46727,8 @@
   - medium_severity | bool
   - mount_option_var_log_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   tags:
   - CCE-83870-6
   - NIST-800-53-AC-6
@@ -45963,7 +46757,8 @@
   - medium_severity | bool
   - mount_option_var_log_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - device_name.stdout is defined and device_name.stdout_lines is defined
   - (device_name.stdout | length > 0)
   tags:
@@ -46000,7 +46795,8 @@
   - medium_severity | bool
   - mount_option_var_log_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - ("--fstab" | length == 0)
   - (device_name.stdout | length == 0)
   tags:
@@ -46028,7 +46824,8 @@
   - medium_severity | bool
   - mount_option_var_log_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - mount_info is defined and "nosuid" not in mount_info.options
   tags:
   - CCE-83870-6
@@ -46059,7 +46856,8 @@
   - medium_severity | bool
   - mount_option_var_log_nosuid | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var/log" in ansible_mounts
+    | map(attribute="mount") | list )
   - (device_name.stdout is defined and (device_name.stdout | length > 0)) or ("--fstab" | length == 0)
   tags:
   - CCE-83870-6
@@ -46088,7 +46886,8 @@
   - medium_severity | bool
   - mount_option_var_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var" in ansible_mounts |
+    map(attribute="mount") | list )
   tags:
   - CCE-83868-0
   - NIST-800-53-AC-6
@@ -46117,7 +46916,8 @@
   - medium_severity | bool
   - mount_option_var_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var" in ansible_mounts |
+    map(attribute="mount") | list )
   - device_name.stdout is defined and device_name.stdout_lines is defined
   - (device_name.stdout | length > 0)
   tags:
@@ -46154,7 +46954,8 @@
   - medium_severity | bool
   - mount_option_var_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var" in ansible_mounts |
+    map(attribute="mount") | list )
   - ("--fstab" | length == 0)
   - (device_name.stdout | length == 0)
   tags:
@@ -46182,7 +46983,8 @@
   - medium_severity | bool
   - mount_option_var_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var" in ansible_mounts |
+    map(attribute="mount") | list )
   - mount_info is defined and "nodev" not in mount_info.options
   tags:
   - CCE-83868-0
@@ -46213,7 +47015,8 @@
   - medium_severity | bool
   - mount_option_var_nodev | bool
   - no_reboot_needed | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and "/var" in ansible_mounts |
+    map(attribute="mount") | list )
   - (device_name.stdout is defined and (device_name.stdout | length > 0)) or ("--fstab" | length == 0)
   tags:
   - CCE-83868-0
@@ -47248,43 +48051,11 @@
   - reboot_required
   - sysctl_user_max_user_namespaces
 
-- name: Block Disable service systemd-coredump
-  block:
-  - name: Disable service systemd-coredump
-    block:
-    - name: Disable service systemd-coredump
-      systemd:
-        name: systemd-coredump.service
-        enabled: 'no'
-        state: stopped
-        masked: 'yes'
-    rescue:
-    - name: Intentionally ignored previous 'Disable service systemd-coredump' failure, service was already disabled
-      meta: noop
-  when:
-  - disable_strategy | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - medium_severity | bool
-  - no_reboot_needed | bool
-  - service_systemd_coredump_disabled | bool
-  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
-  tags:
-  - CCE-83974-6
-  - NIST-800-53-SC-7(10)
-  - disable_strategy
-  - low_complexity
-  - low_disruption
-  - medium_severity
-  - no_reboot_needed
-  - service_systemd-coredump_disabled
-
-- name: Unit Socket Exists - systemd-coredump.socket
-  command: systemctl list-unit-files systemd-coredump.socket
-  register: socket_file_exists
+- name: Disable acquiring, saving, and processing core dumps - Collect systemd Socket Units Present in the System
+  ansible.builtin.command:
+    cmd: systemctl -q list-unit-files --type socket
+  register: result_systemd_unit_files
   changed_when: false
-  failed_when: socket_file_exists.rc not in [0, 1]
-  check_mode: false
   when:
   - disable_strategy | bool
   - low_complexity | bool
@@ -47303,12 +48074,12 @@
   - no_reboot_needed
   - service_systemd-coredump_disabled
 
-- name: Disable socket systemd-coredump
-  systemd:
+- name: Disable acquiring, saving, and processing core dumps - Ensure systemd-coredump.socket is Masked
+  ansible.builtin.systemd:
     name: systemd-coredump.socket
-    enabled: 'no'
     state: stopped
-    masked: 'yes'
+    enabled: false
+    masked: true
   when:
   - disable_strategy | bool
   - low_complexity | bool
@@ -47317,7 +48088,7 @@
   - no_reboot_needed | bool
   - service_systemd_coredump_disabled | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
-  - '"systemd-coredump.socket" in socket_file_exists.stdout_lines[1]'
+  - result_systemd_unit_files.stdout_lines is search("systemd-coredump.socket")
   tags:
   - CCE-83974-6
   - NIST-800-53-SC-7(10)
@@ -47954,7 +48725,7 @@
   - service_kdump_disabled
 
 - name: Unit Socket Exists - kdump.socket
-  command: systemctl list-unit-files kdump.socket
+  command: systemctl -q list-unit-files kdump.socket
   register: socket_file_exists
   changed_when: false
   failed_when: socket_file_exists.rc not in [0, 1]
@@ -47993,7 +48764,7 @@
   - no_reboot_needed | bool
   - service_kdump_disabled | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
-  - '"kdump.socket" in socket_file_exists.stdout_lines[1]'
+  - socket_file_exists.stdout_lines is search("kdump.socket",multiline=True)
   tags:
   - CCE-84232-8
   - NIST-800-53-CM-6(a)
@@ -49666,6 +50437,434 @@
   - no_reboot_needed
   - restrict_strategy
 
+- name: Remove Host-Based Authentication Files - Define Excluded (Non-Local) File Systems and Paths
+  ansible.builtin.set_fact:
+    excluded_fstypes:
+    - afs
+    - ceph
+    - cifs
+    - smb3
+    - smbfs
+    - sshfs
+    - ncpfs
+    - ncp
+    - nfs
+    - nfs4
+    - gfs
+    - gfs2
+    - glusterfs
+    - gpfs
+    - pvfs2
+    - ocfs2
+    - lustre
+    - davfs
+    - fuse.sshfs
+    excluded_paths:
+    - dev
+    - proc
+    - run
+    - sys
+    search_paths: []
+  tags:
+  - CCE-90208-0
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_host_based_files
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_host_based_files | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Remove Host-Based Authentication Files - Find Relevant Root Directories Ignoring Pre-Defined Excluded Paths
+  ansible.builtin.find:
+    paths: /
+    file_type: directory
+    excludes: '{{ excluded_paths }}'
+    hidden: true
+    recurse: false
+  register: result_relevant_root_dirs
+  tags:
+  - CCE-90208-0
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_host_based_files
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_host_based_files | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Remove Host-Based Authentication Files - Include Relevant Root Directories in a List of Paths to be Searched
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.path]) }}'
+  loop: '{{ result_relevant_root_dirs.files }}'
+  tags:
+  - CCE-90208-0
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_host_based_files
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_host_based_files | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Remove Host-Based Authentication Files - Increment Search Paths List with Local Partitions Mount Points
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.mount]) }}'
+  loop: '{{ ansible_mounts }}'
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_host_based_files | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - item.fstype not in excluded_fstypes
+  - item.mount != '/'
+  tags:
+  - CCE-90208-0
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_host_based_files
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Remove Host-Based Authentication Files - Increment Search Paths List with Local NFS File System Targets
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.device.split('':'')[1]]) }}'
+  loop: '{{ ansible_mounts }}'
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_host_based_files | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - item.device is search("localhost:")
+  tags:
+  - CCE-90208-0
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_host_based_files
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Remove Host-Based Authentication Files - Define Rule Specific Facts
+  ansible.builtin.set_fact:
+    shosts_equiv_files:
+    - /shosts.equiv
+  tags:
+  - CCE-90208-0
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_host_based_files
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_host_based_files | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Remove Host-Based Authentication Files - Find All shosts.equiv Files in Local File Systems
+  ansible.builtin.command:
+    cmd: find {{ item }} -xdev -type f -name "shosts.equiv"
+  loop: '{{ search_paths }}'
+  changed_when: false
+  register: result_found_shosts_equiv_files
+  tags:
+  - CCE-90208-0
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_host_based_files
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_host_based_files | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Remove Host-Based Authentication Files - Create List of shosts.equiv Files Present in Local File Systems
+  ansible.builtin.set_fact:
+    shosts_equiv_files: '{{ shosts_equiv_files | union(item.stdout_lines) | list }}'
+  loop: '{{ result_found_shosts_equiv_files.results }}'
+  tags:
+  - CCE-90208-0
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_host_based_files
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_host_based_files | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Remove Host-Based Authentication Files - Ensure No shosts.equiv Files Are Present in the System
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop: '{{ shosts_equiv_files }}'
+  tags:
+  - CCE-90208-0
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_host_based_files
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_host_based_files | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Remove User Host-Based Authentication Files - Define Excluded (Non-Local) File Systems and Paths
+  ansible.builtin.set_fact:
+    excluded_fstypes:
+    - afs
+    - ceph
+    - cifs
+    - smb3
+    - smbfs
+    - sshfs
+    - ncpfs
+    - ncp
+    - nfs
+    - nfs4
+    - gfs
+    - gfs2
+    - glusterfs
+    - gpfs
+    - pvfs2
+    - ocfs2
+    - lustre
+    - davfs
+    - fuse.sshfs
+    excluded_paths:
+    - dev
+    - proc
+    - run
+    - sys
+    search_paths: []
+  tags:
+  - CCE-86532-9
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - no_user_host_based_files
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - no_user_host_based_files | bool
+  - restrict_strategy | bool
+
+- name: Remove User Host-Based Authentication Files - Find Relevant Root Directories Ignoring Pre-Defined Excluded Paths
+  ansible.builtin.find:
+    paths: /
+    file_type: directory
+    excludes: '{{ excluded_paths }}'
+    hidden: true
+    recurse: false
+  register: result_relevant_root_dirs
+  tags:
+  - CCE-86532-9
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - no_user_host_based_files
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - no_user_host_based_files | bool
+  - restrict_strategy | bool
+
+- name: Remove User Host-Based Authentication Files - Include Relevant Root Directories in a List of Paths to be Searched
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.path]) }}'
+  loop: '{{ result_relevant_root_dirs.files }}'
+  tags:
+  - CCE-86532-9
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - no_user_host_based_files
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - no_user_host_based_files | bool
+  - restrict_strategy | bool
+
+- name: Remove User Host-Based Authentication Files - Increment Search Paths List with Local Partitions Mount Points
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.mount]) }}'
+  loop: '{{ ansible_mounts }}'
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - no_user_host_based_files | bool
+  - restrict_strategy | bool
+  - item.fstype not in excluded_fstypes
+  - item.mount != '/'
+  tags:
+  - CCE-86532-9
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - no_user_host_based_files
+  - restrict_strategy
+
+- name: Remove User Host-Based Authentication Files - Increment Search Paths List with Local NFS File System Targets
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.device.split('':'')[1]]) }}'
+  loop: '{{ ansible_mounts }}'
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - no_user_host_based_files | bool
+  - restrict_strategy | bool
+  - item.device is search("localhost:")
+  tags:
+  - CCE-86532-9
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - no_user_host_based_files
+  - restrict_strategy
+
+- name: Remove User Host-Based Authentication Files - Define Rule Specific Facts
+  ansible.builtin.set_fact:
+    user_shosts_files:
+    - /.shosts
+  tags:
+  - CCE-86532-9
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - no_user_host_based_files
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - no_user_host_based_files | bool
+  - restrict_strategy | bool
+
+- name: Remove User Host-Based Authentication Files - Find All .shosts Files in Local File Systems
+  ansible.builtin.command:
+    cmd: find {{ item }} -xdev -type f -name ".shosts"
+  loop: '{{ search_paths }}'
+  changed_when: false
+  register: result_found_shosts_files
+  tags:
+  - CCE-86532-9
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - no_user_host_based_files
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - no_user_host_based_files | bool
+  - restrict_strategy | bool
+
+- name: Remove User Host-Based Authentication Files - Create List of .shosts Files Present in Local File Systems
+  ansible.builtin.set_fact:
+    user_shosts_files: '{{ user_shosts_files | union(item.stdout_lines) | list }}'
+  loop: '{{ result_found_shosts_files.results }}'
+  tags:
+  - CCE-86532-9
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - no_user_host_based_files
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - no_user_host_based_files | bool
+  - restrict_strategy | bool
+
+- name: Remove User Host-Based Authentication Files - Ensure No .shosts Files Are Present in the System
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop: '{{ user_shosts_files }}'
+  tags:
+  - CCE-86532-9
+  - high_severity
+  - low_complexity
+  - low_disruption
+  - no_reboot_needed
+  - no_user_host_based_files
+  - restrict_strategy
+  when:
+  - high_severity | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - no_reboot_needed | bool
+  - no_user_host_based_files | bool
+  - restrict_strategy | bool
+
 - name: Ensure telnet-server is removed
   package:
     name: telnet-server
@@ -49713,6 +50912,109 @@
   - low_disruption | bool
   - no_reboot_needed | bool
   - package_tftp_server_removed | bool
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-90736-0
+  - NIST-800-53-AC-6
+  - NIST-800-53-CM-6(b)
+  - NIST-800-53-CM-7(a)
+  - configure_strategy
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - tftpd_uses_secure_mode
+  when:
+  - configure_strategy | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - tftpd_uses_secure_mode | bool
+
+- name: Find out if the file exists and contains the line configuring server arguments
+  find:
+    path: /etc/xinetd.d
+    patterns: tftp
+    contains: ^[\s]+server_args.*$
+  register: tftpd_secure_config_line
+  when:
+  - configure_strategy | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - tftpd_uses_secure_mode | bool
+  - '"tftp-server" in ansible_facts.packages'
+  tags:
+  - CCE-90736-0
+  - NIST-800-53-AC-6
+  - NIST-800-53-CM-6(b)
+  - NIST-800-53-CM-7(a)
+  - configure_strategy
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - tftpd_uses_secure_mode
+
+- name: Ensure that TFTP server is configured to start with secure directory
+  lineinfile:
+    path: /etc/xinetd.d/tftp
+    regexp: ^[\s]*(server_args[\s]+=[\s]+.*?)(-s[\s]+[/\.\w]+)*(.*)$
+    line: \1 -s {{ var_tftpd_secure_directory }} \3
+    state: present
+    backrefs: true
+  when:
+  - configure_strategy | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - tftpd_uses_secure_mode | bool
+  - '"tftp-server" in ansible_facts.packages'
+  - tftpd_secure_config_line is defined and tftpd_secure_config_line.matched > 0
+  tags:
+  - CCE-90736-0
+  - NIST-800-53-AC-6
+  - NIST-800-53-CM-6(b)
+  - NIST-800-53-CM-7(a)
+  - configure_strategy
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - tftpd_uses_secure_mode
+
+- name: Insert correct config line to start TFTP server with secure directory
+  lineinfile:
+    path: /etc/xinetd.d/tftp
+    line: server_args = -s {{ var_tftpd_secure_directory }}
+    state: present
+    create: true
+  when:
+  - configure_strategy | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - tftpd_uses_secure_mode | bool
+  - '"tftp-server" in ansible_facts.packages'
+  - tftpd_secure_config_line is defined and tftpd_secure_config_line.matched == 0
+  tags:
+  - CCE-90736-0
+  - NIST-800-53-AC-6
+  - NIST-800-53-CM-6(b)
+  - NIST-800-53-CM-7(a)
+  - configure_strategy
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - tftpd_uses_secure_mode
 
 - name: Ensure quagga is removed
   package:
@@ -51588,6 +52890,7 @@
     section: sssd
     option: certificate_verification
     state: absent
+    mode: 384
   when:
   - configure_strategy | bool
   - low_complexity | bool
@@ -51612,6 +52915,7 @@
     section: sssd
     option: certificate_verification
     state: absent
+    mode: 384
   when:
   - configure_strategy | bool
   - low_complexity | bool
@@ -51637,6 +52941,7 @@
     option: certificate_verification
     value: ocsp_dgst = {{ var_sssd_certificate_verification_digest_function }}
     state: present
+    mode: 384
   when:
   - configure_strategy | bool
   - low_complexity | bool
@@ -52265,3 +53570,29 @@
   - medium_severity | bool
   - no_reboot_needed | bool
   - package_xorg_x11_server_common_removed | bool
+
+- name: Switch to multi-user runlevel
+  file:
+    src: /usr/lib/systemd/system/multi-user.target
+    dest: /etc/systemd/system/default.target
+    state: link
+    force: true
+  when:
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - xwindows_runlevel_target | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-84105-6
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-CM-7(a)
+  - NIST-800-53-CM-7(b)
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - reboot_required
+  - restrict_strategy
+  - xwindows_runlevel_target
