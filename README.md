@@ -1,12 +1,11 @@
-DRAFT - DISA STIG for Red Hat Enterprise Linux 9
+DISA STIG for Red Hat Enterprise Linux 9
 =========
 
-Ansible Role for DRAFT - DISA STIG for Red Hat Enterprise Linux 9  
+Ansible Role for DISA STIG for Red Hat Enterprise Linux 9  
   
 Profile Description:  
-This is a draft profile based on its RHEL8 version for experimental purposes.  
-It is not based on the DISA STIG for RHEL9, because this one was not available at time of  
-the release.  
+This profile contains configuration checks that align to the  
+DISA STIG for Red Hat Enterprise Linux 9 V1R1.  
 In addition to being applicable to Red Hat Enterprise Linux 9, DISA recognizes this  
 configuration baseline as applicable to the operating system tier of  
 Red Hat technologies that are based on Red Hat Enterprise Linux 9, such as:  
