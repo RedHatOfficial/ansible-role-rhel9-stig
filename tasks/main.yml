@@ -1508,6 +1508,126 @@
   - reboot_required
   - restrict_strategy
 
+- name: Enable FIPS Mode - Check to See the Current Status of FIPS Mode
+  ansible.builtin.command: /usr/bin/fips-mode-setup --check
+  register: is_fips_enabled
+  ignore_errors: true
+  changed_when: false
+  when:
+  - enable_fips_mode | bool
+  - high_severity | bool
+  - medium_complexity | bool
+  - medium_disruption | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and not ( lookup("env", "container")
+    == "bwrap-osbuild" ) )
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-88742-2
+  - NIST-800-53-CM-3(6)
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-IA-7
+  - NIST-800-53-SC-12
+  - NIST-800-53-SC-12(2)
+  - NIST-800-53-SC-12(3)
+  - NIST-800-53-SC-13
+  - enable_fips_mode
+  - high_severity
+  - medium_complexity
+  - medium_disruption
+  - reboot_required
+  - restrict_strategy
+
+- name: Enable FIPS Mode - Enable FIPS Mode
+  ansible.builtin.command: /usr/bin/fips-mode-setup --enable
+  when:
+  - enable_fips_mode | bool
+  - high_severity | bool
+  - medium_complexity | bool
+  - medium_disruption | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and not ( lookup("env", "container")
+    == "bwrap-osbuild" ) )
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - is_fips_enabled.stdout.find('FIPS mode is enabled.') == -1
+  tags:
+  - CCE-88742-2
+  - NIST-800-53-CM-3(6)
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-IA-7
+  - NIST-800-53-SC-12
+  - NIST-800-53-SC-12(2)
+  - NIST-800-53-SC-12(3)
+  - NIST-800-53-SC-13
+  - enable_fips_mode
+  - high_severity
+  - medium_complexity
+  - medium_disruption
+  - reboot_required
+  - restrict_strategy
+
+- name: Enable FIPS Mode - Configure Crypto Policy
+  ansible.builtin.lineinfile:
+    path: /etc/crypto-policies/config
+    regexp: ^(?!#)(\S+)$
+    line: '{{ var_system_crypto_policy }}'
+    create: true
+  when:
+  - enable_fips_mode | bool
+  - high_severity | bool
+  - medium_complexity | bool
+  - medium_disruption | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and not ( lookup("env", "container")
+    == "bwrap-osbuild" ) )
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-88742-2
+  - NIST-800-53-CM-3(6)
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-IA-7
+  - NIST-800-53-SC-12
+  - NIST-800-53-SC-12(2)
+  - NIST-800-53-SC-12(3)
+  - NIST-800-53-SC-13
+  - enable_fips_mode
+  - high_severity
+  - medium_complexity
+  - medium_disruption
+  - reboot_required
+  - restrict_strategy
+
+- name: Enable FIPS Mode - Verify that Crypto Policy is Set (runtime)
+  ansible.builtin.command: /usr/bin/update-crypto-policies --set {{ var_system_crypto_policy }}
+  when:
+  - enable_fips_mode | bool
+  - high_severity | bool
+  - medium_complexity | bool
+  - medium_disruption | bool
+  - reboot_required | bool
+  - restrict_strategy | bool
+  - ( ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"] and not ( lookup("env", "container")
+    == "bwrap-osbuild" ) )
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-88742-2
+  - NIST-800-53-CM-3(6)
+  - NIST-800-53-CM-6(a)
+  - NIST-800-53-IA-7
+  - NIST-800-53-SC-12
+  - NIST-800-53-SC-12(2)
+  - NIST-800-53-SC-12(3)
+  - NIST-800-53-SC-13
+  - enable_fips_mode
+  - high_severity
+  - medium_complexity
+  - medium_disruption
+  - reboot_required
+  - restrict_strategy
+
 - name: Ensure crypto-policies is installed
   package:
     name: crypto-policies
@@ -1672,7 +1792,8 @@
   - no_reboot_needed | bool
   - unknown_strategy | bool
 
-- name: '{{ rule_title }} - Add .include Line for opensslcnf.config File in crypto_policy Section'
+- name: Configure OpenSSL library to use System Crypto Policy - Add .include Line for opensslcnf.config File in crypto_policy
+    Section
   ansible.builtin.lineinfile:
     create: true
     insertafter: ^\s*\[\s*crypto_policy\s*]\s*
@@ -1743,7 +1864,7 @@
   lineinfile:
     dest: /etc/sysconfig/sshd
     state: absent
-    regexp: ^\s*(?i)CRYPTO_POLICY.*$
+    regexp: ^(?i)\s*CRYPTO_POLICY.*$
   tags:
   - CCE-83445-7
   - NIST-800-53-AC-17(2)
@@ -4098,8 +4219,8 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
 
-- name: Ensure DNF Removes Previous Package Versions
-  lineinfile:
+- name: Ensure dnf Removes Previous Package Versions - Ensure DNF Removes Previous Package Versions
+  ansible.builtin.lineinfile:
     dest: /etc/dnf/dnf.conf
     regexp: ^#?clean_requirements_on_remove
     line: clean_requirements_on_remove=1
@@ -4961,10 +5082,10 @@
   - low_severity | bool
   - no_reboot_needed | bool
 
-- name: Ensure PAM Displays Last Logon/Access Notification - Check if /etc/pam.d/postlogin file is present
+- name: Ensure PAM Displays Last Logon/Access Notification - Check if system relies on authselect tool
   ansible.builtin.stat:
-    path: /etc/pam.d/postlogin
-  register: result_pam_file_present
+    path: /usr/bin/authselect
+  register: result_authselect_present
   when:
   - configure_strategy | bool
   - display_login_attempts | bool
@@ -4987,7 +5108,101 @@
   - low_severity
   - no_reboot_needed
 
-- name: Ensure PAM Displays Last Logon/Access Notification - Check the proper remediation for the system
+- name: Ensure PAM Displays Last Logon/Access Notification - Collect the Available authselect Features
+  ansible.builtin.command:
+    cmd: authselect list-features minimal
+  register: result_authselect_available_features
+  changed_when: false
+  when:
+  - configure_strategy | bool
+  - display_login_attempts | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - low_severity | bool
+  - no_reboot_needed | bool
+  - '"pam" in ansible_facts.packages'
+  - result_authselect_present.stat.exists
+  tags:
+  - CCE-83560-3
+  - CJIS-5.5.2
+  - NIST-800-53-AC-9
+  - NIST-800-53-AC-9(1)
+  - PCI-DSS-Req-10.2.4
+  - PCI-DSSv4-10.2.1.4
+  - configure_strategy
+  - display_login_attempts
+  - low_complexity
+  - low_disruption
+  - low_severity
+  - no_reboot_needed
+
+- name: Ensure PAM Displays Last Logon/Access Notification - Configure pam_lastlog.so Using authselect Feature
+  block:
+  - name: Ensure PAM Displays Last Logon/Access Notification - Check integrity of authselect current profile
+    ansible.builtin.command:
+      cmd: authselect check
+    register: result_authselect_check_cmd
+    changed_when: false
+    failed_when: false
+  - name: Ensure PAM Displays Last Logon/Access Notification - Informative message based on the authselect integrity check
+      result
+    ansible.builtin.assert:
+      that:
+      - result_authselect_check_cmd.rc == 0
+      fail_msg:
+      - authselect integrity check failed. Remediation aborted!
+      - This remediation could not be applied because an authselect profile was not selected or the selected profile is not
+        intact.
+      - It is not recommended to manually edit the PAM files when authselect tool is available.
+      - In cases where the default authselect profile does not cover a specific demand, a custom authselect profile is recommended.
+      success_msg:
+      - authselect integrity check passed
+  - name: Ensure PAM Displays Last Logon/Access Notification - Get authselect Features Currently Enabled
+    ansible.builtin.shell:
+      cmd: authselect current | tail -n+3 | awk '{ print $2 }'
+    register: result_authselect_features
+    changed_when: false
+    when:
+    - result_authselect_check_cmd is success
+  - name: Ensure PAM Displays Last Logon/Access Notification - Ensure "with-silent-lastlog" Feature is Disabled Using authselect
+      Tool
+    ansible.builtin.command:
+      cmd: authselect disable-feature with-silent-lastlog
+    register: result_authselect_disable_feature_cmd
+    when:
+    - result_authselect_check_cmd is success
+    - result_authselect_features.stdout is search("with-silent-lastlog")
+  - name: Ensure PAM Displays Last Logon/Access Notification - Ensure authselect changes are applied
+    ansible.builtin.command:
+      cmd: authselect apply-changes -b
+    when:
+    - result_authselect_disable_feature_cmd is not skipped
+    - result_authselect_disable_feature_cmd is success
+  when:
+  - configure_strategy | bool
+  - display_login_attempts | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - low_severity | bool
+  - no_reboot_needed | bool
+  - '"pam" in ansible_facts.packages'
+  - result_authselect_present.stat.exists
+  - result_authselect_available_features.stdout is search("with-silent-lastlog")
+  tags:
+  - CCE-83560-3
+  - CJIS-5.5.2
+  - NIST-800-53-AC-9
+  - NIST-800-53-AC-9(1)
+  - PCI-DSS-Req-10.2.4
+  - PCI-DSSv4-10.2.1.4
+  - configure_strategy
+  - display_login_attempts
+  - low_complexity
+  - low_disruption
+  - low_severity
+  - no_reboot_needed
+
+- name: Ensure PAM Displays Last Logon/Access Notification - Configure pam_lastlog.so in appropriate PAM files
   block:
   - name: Ensure PAM Displays Last Logon/Access Notification - Define the PAM file to be edited as a local fact
     ansible.builtin.set_fact:
@@ -5106,7 +5321,7 @@
       }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*session\s+required\s+pam_lastlog.so\s*.*
+      regexp: ^\s*session\s+{{ '[default=1]' | regex_escape() }}\s+pam_lastlog.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -5127,7 +5342,7 @@
       ansible.builtin.replace:
         dest: '{{ pam_file_path }}'
         regexp: ^(\s*session\s+).*(\bpam_lastlog.so.*)
-        replace: \1required \2
+        replace: \1[default=1] \2
       register: result_pam_module_edit
       when:
       - result_pam_line_other_control_present.found == 1
@@ -5135,8 +5350,8 @@
         }}
       ansible.builtin.lineinfile:
         dest: '{{ pam_file_path }}'
-        insertafter: BOF
-        line: session    required    pam_lastlog.so
+        insertafter: ^\s*session\s+.*pam_succeed_if\.so.*
+        line: session    [default=1]    pam_lastlog.so
       register: result_pam_module_add
       when:
       - result_pam_line_other_control_present.found == 0 or result_pam_line_other_control_present.found > 1
@@ -5155,7 +5370,7 @@
       }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*session\s+required\s+pam_lastlog.so\s*.*\sshowfailed\b
+      regexp: ^\s*session\s+{{ '[default=1]' | regex_escape() }}\s+pam_lastlog.so\s*.*\sshowfailed\b
       state: absent
     check_mode: true
     changed_when: false
@@ -5165,196 +5380,19 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*session\s+required\s+pam_lastlog.so.*)
+      regexp: ^(\s*session\s+{{ '[default=1]' | regex_escape() }}\s+pam_lastlog.so.*)
       line: \1 showfailed
       state: present
     register: result_pam_showfailed_add
     when:
     - result_pam_module_showfailed_option_present.found == 0
-  - name: Ensure PAM Displays Last Logon/Access Notification - Ensure authselect changes are applied
-    ansible.builtin.command:
-      cmd: authselect apply-changes -b
-    when:
-    - result_authselect_present.stat.exists
-    - "(result_pam_showfailed_add is defined and result_pam_showfailed_add.changed)\n or (result_pam_showfailed_edit is defined\
-      \ and result_pam_showfailed_edit.changed)"
-  when:
-  - configure_strategy | bool
-  - display_login_attempts | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - low_severity | bool
-  - no_reboot_needed | bool
-  - '"pam" in ansible_facts.packages'
-  - result_pam_file_present.stat.exists
-  tags:
-  - CCE-83560-3
-  - CJIS-5.5.2
-  - NIST-800-53-AC-9
-  - NIST-800-53-AC-9(1)
-  - PCI-DSS-Req-10.2.4
-  - PCI-DSSv4-10.2.1.4
-  - configure_strategy
-  - display_login_attempts
-  - low_complexity
-  - low_disruption
-  - low_severity
-  - no_reboot_needed
-
-- name: Ensure PAM Displays Last Logon/Access Notification - Check if /etc/pam.d/postlogin file is present
-  ansible.builtin.stat:
-    path: /etc/pam.d/postlogin
-  register: result_pam_file_present
-  when:
-  - configure_strategy | bool
-  - display_login_attempts | bool
-  - low_complexity | bool
-  - low_disruption | bool
-  - low_severity | bool
-  - no_reboot_needed | bool
-  - '"pam" in ansible_facts.packages'
-  tags:
-  - CCE-83560-3
-  - CJIS-5.5.2
-  - NIST-800-53-AC-9
-  - NIST-800-53-AC-9(1)
-  - PCI-DSS-Req-10.2.4
-  - PCI-DSSv4-10.2.1.4
-  - configure_strategy
-  - display_login_attempts
-  - low_complexity
-  - low_disruption
-  - low_severity
-  - no_reboot_needed
-
-- name: Ensure PAM Displays Last Logon/Access Notification - Check the proper remediation for the system
-  block:
-  - name: Ensure PAM Displays Last Logon/Access Notification - Define the PAM file to be edited as a local fact
-    ansible.builtin.set_fact:
-      pam_file_path: /etc/pam.d/postlogin
-  - name: Ensure PAM Displays Last Logon/Access Notification - Check if system relies on authselect tool
-    ansible.builtin.stat:
-      path: /usr/bin/authselect
-    register: result_authselect_present
-  - name: Ensure PAM Displays Last Logon/Access Notification - Ensure authselect custom profile is used if authselect is present
-    block:
-    - name: Ensure PAM Displays Last Logon/Access Notification - Check integrity of authselect current profile
-      ansible.builtin.command:
-        cmd: authselect check
-      register: result_authselect_check_cmd
-      changed_when: false
-      failed_when: false
-    - name: Ensure PAM Displays Last Logon/Access Notification - Informative message based on the authselect integrity check
-        result
-      ansible.builtin.assert:
-        that:
-        - result_authselect_check_cmd.rc == 0
-        fail_msg:
-        - authselect integrity check failed. Remediation aborted!
-        - This remediation could not be applied because an authselect profile was not selected or the selected profile is
-          not intact.
-        - It is not recommended to manually edit the PAM files when authselect tool is available.
-        - In cases where the default authselect profile does not cover a specific demand, a custom authselect profile is recommended.
-        success_msg:
-        - authselect integrity check passed
-    - name: Ensure PAM Displays Last Logon/Access Notification - Get authselect current profile
-      ansible.builtin.shell:
-        cmd: authselect current -r | awk '{ print $1 }'
-      register: result_authselect_profile
-      changed_when: false
-      when:
-      - result_authselect_check_cmd is success
-    - name: Ensure PAM Displays Last Logon/Access Notification - Define the current authselect profile as a local fact
-      ansible.builtin.set_fact:
-        authselect_current_profile: '{{ result_authselect_profile.stdout }}'
-        authselect_custom_profile: '{{ result_authselect_profile.stdout }}'
-      when:
-      - result_authselect_profile is not skipped
-      - result_authselect_profile.stdout is match("custom/")
-    - name: Ensure PAM Displays Last Logon/Access Notification - Define the new authselect custom profile as a local fact
-      ansible.builtin.set_fact:
-        authselect_current_profile: '{{ result_authselect_profile.stdout }}'
-        authselect_custom_profile: custom/hardening
-      when:
-      - result_authselect_profile is not skipped
-      - result_authselect_profile.stdout is not match("custom/")
-    - name: Ensure PAM Displays Last Logon/Access Notification - Get authselect current features to also enable them in the
-        custom profile
-      ansible.builtin.shell:
-        cmd: authselect current | tail -n+3 | awk '{ print $2 }'
-      register: result_authselect_features
-      changed_when: false
-      when:
-      - result_authselect_profile is not skipped
-      - authselect_current_profile is not match("custom/")
-    - name: Ensure PAM Displays Last Logon/Access Notification - Check if any custom profile with the same name was already
-        created
-      ansible.builtin.stat:
-        path: /etc/authselect/{{ authselect_custom_profile }}
-      register: result_authselect_custom_profile_present
-      changed_when: false
-      when:
-      - authselect_current_profile is not match("custom/")
-    - name: Ensure PAM Displays Last Logon/Access Notification - Create an authselect custom profile based on the current
-        profile
-      ansible.builtin.command:
-        cmd: authselect create-profile hardening -b {{ authselect_current_profile }}
-      when:
-      - result_authselect_check_cmd is success
-      - authselect_current_profile is not match("custom/")
-      - not result_authselect_custom_profile_present.stat.exists
-    - name: Ensure PAM Displays Last Logon/Access Notification - Ensure authselect changes are applied
-      ansible.builtin.command:
-        cmd: authselect apply-changes -b --backup=before-hardening-custom-profile
-      when:
-      - result_authselect_check_cmd is success
-      - result_authselect_profile is not skipped
-      - authselect_current_profile is not match("custom/")
-      - authselect_custom_profile is not match(authselect_current_profile)
-    - name: Ensure PAM Displays Last Logon/Access Notification - Ensure the authselect custom profile is selected
-      ansible.builtin.command:
-        cmd: authselect select {{ authselect_custom_profile }}
-      register: result_pam_authselect_select_profile
-      when:
-      - result_authselect_check_cmd is success
-      - result_authselect_profile is not skipped
-      - authselect_current_profile is not match("custom/")
-      - authselect_custom_profile is not match(authselect_current_profile)
-    - name: Ensure PAM Displays Last Logon/Access Notification - Restore the authselect features in the custom profile
-      ansible.builtin.command:
-        cmd: authselect enable-feature {{ item }}
-      loop: '{{ result_authselect_features.stdout_lines }}'
-      register: result_pam_authselect_restore_features
-      when:
-      - result_authselect_profile is not skipped
-      - result_authselect_features is not skipped
-      - result_pam_authselect_select_profile is not skipped
-    - name: Ensure PAM Displays Last Logon/Access Notification - Ensure authselect changes are applied
-      ansible.builtin.command:
-        cmd: authselect apply-changes -b --backup=after-hardening-custom-profile
-      when:
-      - result_authselect_check_cmd is success
-      - result_authselect_profile is not skipped
-      - result_pam_authselect_restore_features is not skipped
-    - name: Ensure PAM Displays Last Logon/Access Notification - Change the PAM file to be edited according to the custom
-        authselect profile
-      ansible.builtin.set_fact:
-        pam_file_path: /etc/authselect/{{ authselect_custom_profile }}/{{ pam_file_path | basename }}
-    when:
-    - result_authselect_present.stat.exists
   - name: Ensure PAM Displays Last Logon/Access Notification - Ensure the "silent" option from "pam_lastlog.so" is not present
       in {{ pam_file_path }}
     ansible.builtin.replace:
       dest: '{{ pam_file_path }}'
-      regexp: (.*session.*pam_lastlog.so.*)\bsilent\b=?[0-9a-zA-Z]*(.*)
+      regexp: (.*session.*{{ '[default=1]' | regex_escape() }}.*pam_lastlog.so.*)\bsilent\b=?[0-9a-zA-Z]*(.*)
       replace: \1\2
     register: result_pam_option_removal
-  - name: Ensure PAM Displays Last Logon/Access Notification - Ensure authselect changes are applied
-    ansible.builtin.command:
-      cmd: authselect apply-changes -b
-    when:
-    - result_authselect_present.stat.exists
-    - result_pam_option_removal is changed
   when:
   - configure_strategy | bool
   - display_login_attempts | bool
@@ -5363,7 +5401,6 @@
   - low_severity | bool
   - no_reboot_needed | bool
   - '"pam" in ansible_facts.packages'
-  - result_pam_file_present.stat.exists
   tags:
   - CCE-83560-3
   - CJIS-5.5.2
@@ -5633,7 +5670,7 @@
   - name: 'Limit Password Reuse: password-auth - Check if expected PAM module line is present in {{ pam_file_path }}'
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+{{ var_password_pam_remember_control_flag.split(",")[0] }}\s+pam_pwhistory.so\s*.*
+      regexp: ^\s*password\s+{{ '{{ var_password_pam_remember_control_flag.split(",")[0] }}' | regex_escape() }}\s+pam_pwhistory.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -6007,7 +6044,7 @@
   - name: 'Limit Password Reuse: password-auth - Check if expected PAM module line is present in {{ pam_file_path }}'
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+requisite\s+pam_pwhistory.so\s*.*
+      regexp: ^\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwhistory.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -6053,7 +6090,7 @@
   - name: 'Limit Password Reuse: password-auth - Check if the required PAM module option is present in {{ pam_file_path }}'
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+requisite\s+pam_pwhistory.so\s*.*\sremember\b
+      regexp: ^\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwhistory.so\s*.*\sremember\b
       state: absent
     check_mode: true
     changed_when: false
@@ -6063,7 +6100,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+requisite\s+pam_pwhistory.so.*)
+      regexp: ^(\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwhistory.so.*)
       line: \1 remember={{ var_password_pam_remember }}
       state: present
     register: result_pam_remember_add
@@ -6074,7 +6111,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+requisite\s+pam_pwhistory.so\s+.*)(remember)=[0-9a-zA-Z]+\s*(.*)
+      regexp: ^(\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwhistory.so\s+.*)(remember)=[0-9a-zA-Z]+\s*(.*)
       line: \1\2={{ var_password_pam_remember }} \3
     register: result_pam_remember_edit
     when:
@@ -6364,7 +6401,7 @@
   - name: 'Limit Password Reuse: system-auth - Check if expected PAM module line is present in {{ pam_file_path }}'
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+{{ var_password_pam_remember_control_flag.split(",")[0] }}\s+pam_pwhistory.so\s*.*
+      regexp: ^\s*password\s+{{ '{{ var_password_pam_remember_control_flag.split(",")[0] }}' | regex_escape() }}\s+pam_pwhistory.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -6736,7 +6773,7 @@
   - name: 'Limit Password Reuse: system-auth - Check if expected PAM module line is present in {{ pam_file_path }}'
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+requisite\s+pam_pwhistory.so\s*.*
+      regexp: ^\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwhistory.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -6782,7 +6819,7 @@
   - name: 'Limit Password Reuse: system-auth - Check if the required PAM module option is present in {{ pam_file_path }}'
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+requisite\s+pam_pwhistory.so\s*.*\sremember\b
+      regexp: ^\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwhistory.so\s*.*\sremember\b
       state: absent
     check_mode: true
     changed_when: false
@@ -6792,7 +6829,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+requisite\s+pam_pwhistory.so.*)
+      regexp: ^(\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwhistory.so.*)
       line: \1 remember={{ var_password_pam_remember }}
       state: present
     register: result_pam_remember_add
@@ -6803,7 +6840,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+requisite\s+pam_pwhistory.so\s+.*)(remember)=[0-9a-zA-Z]+\s*(.*)
+      regexp: ^(\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwhistory.so\s+.*)(remember)=[0-9a-zA-Z]+\s*(.*)
       line: \1\2={{ var_password_pam_remember }} \3
     register: result_pam_remember_edit
     when:
@@ -11130,7 +11167,7 @@
       in {{ pam_file_path }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+requisite\s+pam_pwquality.so\s*.*
+      regexp: ^\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwquality.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -11363,7 +11400,7 @@
       {{ pam_file_path }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+requisite\s+pam_pwquality.so\s*.*
+      regexp: ^\s*password\s+{{ 'requisite' | regex_escape() }}\s+pam_pwquality.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -11640,7 +11677,7 @@
       option from "pam_pwquality.so" is not present in {{ pam_file_path }}
     ansible.builtin.replace:
       dest: '{{ pam_file_path }}'
-      regexp: (.*password.*.*.*pam_pwquality.so.*)\bretry\b=?[0-9a-zA-Z]*(.*)
+      regexp: (.*password.*{{ '.*' | regex_escape() }}.*pam_pwquality.so.*)\bretry\b=?[0-9a-zA-Z]*(.*)
       replace: \1\2
     register: result_pam_option_removal
   - name: Ensure PAM Enforces Password Requirements - Authentication Retry Prompts Permitted Per-Session - Ensure authselect
@@ -11829,7 +11866,7 @@
       option from "pam_pwquality.so" is not present in {{ pam_file_path }}
     ansible.builtin.replace:
       dest: '{{ pam_file_path }}'
-      regexp: (.*password.*.*.*pam_pwquality.so.*)\bretry\b=?[0-9a-zA-Z]*(.*)
+      regexp: (.*password.*{{ '.*' | regex_escape() }}.*pam_pwquality.so.*)\bretry\b=?[0-9a-zA-Z]*(.*)
       replace: \1\2
     register: result_pam_option_removal
   - name: Ensure PAM Enforces Password Requirements - Authentication Retry Prompts Permitted Per-Session - Ensure authselect
@@ -12204,7 +12241,7 @@
       }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+sufficient\s+pam_unix.so\s*.*
+      regexp: ^\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -12253,7 +12290,7 @@
       pam_file_path }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+sufficient\s+pam_unix.so\s*.*\ssha512\b
+      regexp: ^\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s*.*\ssha512\b
       state: absent
     check_mode: true
     changed_when: false
@@ -12263,7 +12300,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+sufficient\s+pam_unix.so.*)
+      regexp: ^(\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so.*)
       line: \1 sha512
       state: present
     register: result_pam_sha512_add
@@ -12466,7 +12503,7 @@
   - name: Set PAM's Password Hashing Algorithm - Check if expected PAM module line is present in {{ pam_file_path }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+sufficient\s+pam_unix.so\s*.*
+      regexp: ^\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -12512,7 +12549,7 @@
   - name: Set PAM's Password Hashing Algorithm - Check if the required PAM module option is present in {{ pam_file_path }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+sufficient\s+pam_unix.so\s*.*\ssha512\b
+      regexp: ^\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s*.*\ssha512\b
       state: absent
     check_mode: true
     changed_when: false
@@ -12522,7 +12559,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+sufficient\s+pam_unix.so.*)
+      regexp: ^(\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so.*)
       line: \1 sha512
       state: present
     register: result_pam_sha512_add
@@ -13062,12 +13099,31 @@
   - medium_severity
   - no_reboot_needed
 
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-89876-7
+  - configure_tmux_lock_after_time
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - configure_tmux_lock_after_time | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
 - name: Configure tmux to lock session after inactivity
   block:
   - name: Check for duplicate values
     lineinfile:
       path: /etc/tmux.conf
-      create: false
+      create: true
       regexp: ^\s*set -g lock-after-time\s+
       mode: '0644'
       state: absent
@@ -13077,7 +13133,7 @@
   - name: Deduplicate values from /etc/tmux.conf
     lineinfile:
       path: /etc/tmux.conf
-      create: false
+      create: true
       regexp: ^\s*set -g lock-after-time\s+
       mode: '0644'
       state: absent
@@ -13098,6 +13154,7 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '"tmux" in ansible_facts.packages'
   tags:
   - CCE-89876-7
   - configure_tmux_lock_after_time
@@ -13107,12 +13164,34 @@
   - no_reboot_needed
   - restrict_strategy
 
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-90171-0
+  - NIST-800-53-AC-11(a)
+  - NIST-800-53-AC-11(b)
+  - NIST-800-53-CM-6(a)
+  - configure_tmux_lock_command
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - configure_tmux_lock_command | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
 - name: Configure the tmux Lock Command
   block:
   - name: Check for duplicate values
     lineinfile:
       path: /etc/tmux.conf
-      create: false
+      create: true
       regexp: ^\s*set -g lock-command\s+
       mode: '0644'
       state: absent
@@ -13122,7 +13201,7 @@
   - name: Deduplicate values from /etc/tmux.conf
     lineinfile:
       path: /etc/tmux.conf
-      create: false
+      create: true
       regexp: ^\s*set -g lock-command\s+
       mode: '0644'
       state: absent
@@ -13143,6 +13222,7 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - '"tmux" in ansible_facts.packages'
   tags:
   - CCE-90171-0
   - NIST-800-53-AC-11(a)
@@ -13762,7 +13842,7 @@
       }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+sufficient\s+pam_unix.so\s*.*
+      regexp: ^\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -13811,7 +13891,7 @@
       pam_file_path }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+sufficient\s+pam_unix.so\s*.*\srounds\b
+      regexp: ^\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s*.*\srounds\b
       state: absent
     check_mode: true
     changed_when: false
@@ -13821,7 +13901,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+sufficient\s+pam_unix.so.*)
+      regexp: ^(\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so.*)
       line: \1 rounds={{ var_password_pam_unix_rounds }}
       state: present
     register: result_pam_rounds_add
@@ -13832,7 +13912,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+sufficient\s+pam_unix.so\s+.*)(rounds)=[0-9a-zA-Z]+\s*(.*)
+      regexp: ^(\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s+.*)(rounds)=[0-9a-zA-Z]+\s*(.*)
       line: \1\2={{ var_password_pam_unix_rounds }} \3
     register: result_pam_rounds_edit
     when:
@@ -14021,7 +14101,7 @@
       }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+sufficient\s+pam_unix.so\s*.*
+      regexp: ^\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -14070,7 +14150,7 @@
       }}
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
-      regexp: ^\s*password\s+sufficient\s+pam_unix.so\s*.*\srounds\b
+      regexp: ^\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s*.*\srounds\b
       state: absent
     check_mode: true
     changed_when: false
@@ -14080,7 +14160,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+sufficient\s+pam_unix.so.*)
+      regexp: ^(\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so.*)
       line: \1 rounds={{ var_password_pam_unix_rounds }}
       state: present
     register: result_pam_rounds_add
@@ -14091,7 +14171,7 @@
     ansible.builtin.lineinfile:
       path: '{{ pam_file_path }}'
       backrefs: true
-      regexp: ^(\s*password\s+sufficient\s+pam_unix.so\s+.*)(rounds)=[0-9a-zA-Z]+\s*(.*)
+      regexp: ^(\s*password\s+{{ 'sufficient' | regex_escape() }}\s+pam_unix.so\s+.*)(rounds)=[0-9a-zA-Z]+\s*(.*)
       line: \1\2={{ var_password_pam_unix_rounds }} \3
     register: result_pam_rounds_edit
     when:
@@ -14501,7 +14581,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/login.defs
-      create: false
+      create: true
       regexp: ^\s*CREATE_HOME\s+
       state: absent
     check_mode: true
@@ -14510,7 +14590,7 @@
   - name: Deduplicate values from /etc/login.defs
     lineinfile:
       path: /etc/login.defs
-      create: false
+      create: true
       regexp: ^\s*CREATE_HOME\s+
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -15110,14 +15190,9 @@
   - no_reboot_needed
   - restrict_strategy
 
-- name: Check if umask in /etc/bashrc is already set
-  ansible.builtin.lineinfile:
-    path: /etc/bashrc
-    regexp: ^(\s*)umask\s+.*
-    state: absent
-  check_mode: true
-  changed_when: false
-  register: umask_replace
+- name: Gather the package facts
+  package_facts:
+    manager: auto
   tags:
   - CCE-83644-5
   - NIST-800-53-AC-6(1)
@@ -15137,6 +15212,34 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
 
+- name: Check if umask in /etc/bashrc is already set
+  ansible.builtin.lineinfile:
+    path: /etc/bashrc
+    regexp: ^(\s*)umask\s+.*
+    state: absent
+  check_mode: true
+  changed_when: false
+  register: umask_replace
+  when:
+  - accounts_umask_etc_bashrc | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - '"bash" in ansible_facts.packages'
+  tags:
+  - CCE-83644-5
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSSv4-8.6.1
+  - accounts_umask_etc_bashrc
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
 - name: Replace user umask in /etc/bashrc
   ansible.builtin.replace:
     path: /etc/bashrc
@@ -15149,6 +15252,7 @@
   - medium_severity | bool
   - no_reboot_needed | bool
   - restrict_strategy | bool
+  - '"bash" in ansible_facts.packages'
   - umask_replace.found > 0
   tags:
   - CCE-83644-5
@@ -15174,6 +15278,7 @@
   - medium_severity | bool
   - no_reboot_needed | bool
   - restrict_strategy | bool
+  - '"bash" in ansible_facts.packages'
   - umask_replace.found == 0
   tags:
   - CCE-83644-5
@@ -15475,7 +15580,7 @@
   ansible.builtin.shell:
     cmd: "for dir in $(awk -F':' '{ if ($3 >= 1000 && $3 != 65534) print $6}' /etc/passwd); do\n  for file in $(find $dir\
       \ -maxdepth 1 -type f -name \".*\"); do\n    if [ \"$(basename $file)\" != \".bash_history\" ]; then\n      sed -i 's/^\\\
-      ([\\s]*umask\\s*\\)/#\\1/g' $file\n    fi\n  done\ndone"
+      (\\s*umask\\s*\\)/#\\1/g' $file\n    fi\n  done\ndone"
   tags:
   - CCE-90365-8
   - accounts_umask_interactive_users
@@ -18155,6 +18260,174 @@
   package_facts:
     manager: auto
   tags:
+  - CCE-90516-6
+  - CJIS-5.4.1.1
+  - NIST-800-171-3.3.1
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-AU-9(4)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSS-Req-10.5.1
+  - configure_strategy
+  - directory_group_ownership_var_log_audit
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  when:
+  - configure_strategy | bool
+  - directory_group_ownership_var_log_audit | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+
+- name: System Audit Directories Must Be Group Owned By Root - Register Audit Configuration Text
+  ansible.builtin.slurp:
+    src: /etc/audit/auditd.conf
+  register: auditd_config_slurp
+  when:
+  - configure_strategy | bool
+  - directory_group_ownership_var_log_audit | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-90516-6
+  - CJIS-5.4.1.1
+  - NIST-800-171-3.3.1
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-AU-9(4)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSS-Req-10.5.1
+  - configure_strategy
+  - directory_group_ownership_var_log_audit
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: System Audit Directories Must Be Group Owned By Root - Set Permissions Custom Location
+  ansible.builtin.file:
+    group: '{{ auditd_config_slurp[''content''] | b64decode | regex_findall(''
+
+      log_group\s*=\s*(.+)'') | default([''root'',], boolean=True) | first }}'
+    path: '{{ auditd_config_slurp[''content''] | b64decode | regex_findall(''
+
+      log_file\s*=\s*(.+)'') | default([''/var/log/audit/audit.log'',], boolean=True) | first | dirname }}'
+  when:
+  - configure_strategy | bool
+  - directory_group_ownership_var_log_audit | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-90516-6
+  - CJIS-5.4.1.1
+  - NIST-800-171-3.3.1
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-AU-9(4)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSS-Req-10.5.1
+  - configure_strategy
+  - directory_group_ownership_var_log_audit
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
+  - CCE-85869-6
+  - CJIS-5.4.1.1
+  - NIST-800-171-3.3.1
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-AU-9(4)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSS-Req-10.5.1
+  - configure_strategy
+  - directory_ownership_var_log_audit
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  when:
+  - configure_strategy | bool
+  - directory_ownership_var_log_audit | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+
+- name: System Audit Directories Must Be Owned By Root - Register Audit Configuration Text
+  ansible.builtin.slurp:
+    src: /etc/audit/auditd.conf
+  register: auditd_config_slurp
+  when:
+  - configure_strategy | bool
+  - directory_ownership_var_log_audit | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-85869-6
+  - CJIS-5.4.1.1
+  - NIST-800-171-3.3.1
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-AU-9(4)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSS-Req-10.5.1
+  - configure_strategy
+  - directory_ownership_var_log_audit
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: System Audit Directories Must Be Owned By Root - Set Permissions Custom Location
+  ansible.builtin.file:
+    owner: root
+    path: '{{ auditd_config_slurp[''content''] | b64decode | regex_findall(''
+
+      log_file\s*=\s*(.+)'') | default([''/var/log/audit/audit.log'',], boolean=True) | first | dirname }}'
+  when:
+  - configure_strategy | bool
+  - directory_ownership_var_log_audit | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-85869-6
+  - CJIS-5.4.1.1
+  - NIST-800-171-3.3.1
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-AU-9(4)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSS-Req-10.5.1
+  - configure_strategy
+  - directory_ownership_var_log_audit
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: Gather the package facts
+  package_facts:
+    manager: auto
+  tags:
   - CCE-83720-3
   - CJIS-5.4.1.1
   - NIST-800-171-3.3.1
@@ -18361,6 +18634,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -18483,6 +18757,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83830-0
   - CJIS-5.4.1.1
@@ -18603,6 +18878,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83830-0
@@ -18658,6 +18934,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -18782,6 +19059,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83812-8
   - CJIS-5.4.1.1
@@ -18904,6 +19182,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83812-8
@@ -21169,6 +21448,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -21293,6 +21573,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83833-4
   - CJIS-5.4.1.1
@@ -21415,6 +21696,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83833-4
@@ -23577,6 +23859,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-89272-9
   - audit_rules_dac_modification_umount
@@ -24682,6 +24965,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -24807,6 +25091,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83754-2
   - NIST-800-171-3.1.7
@@ -24930,6 +25215,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83754-2
@@ -25284,6 +25570,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -25409,6 +25696,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83758-3
   - NIST-800-171-3.1.7
@@ -25532,6 +25820,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83758-3
@@ -25585,6 +25874,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -25710,6 +26000,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83757-5
   - NIST-800-171-3.1.7
@@ -25833,6 +26124,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83757-5
@@ -26189,6 +26481,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -26320,6 +26613,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83786-4
   - NIST-800-171-3.1.7
@@ -26449,6 +26743,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83786-4
@@ -26579,6 +26874,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83786-4
   - NIST-800-171-3.1.7
@@ -26708,6 +27004,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83786-4
@@ -27341,6 +27638,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -27472,6 +27770,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83801-1
   - NIST-800-171-3.1.7
@@ -27601,6 +27900,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83801-1
@@ -27731,6 +28031,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-83801-1
   - NIST-800-171-3.1.7
@@ -27860,6 +28161,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-83801-1
@@ -29069,6 +29371,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -29196,6 +29499,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-88011-2
   - NIST-800-171-3.1.7
@@ -29321,6 +29625,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-88011-2
@@ -29447,6 +29752,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-88011-2
   - NIST-800-171-3.1.7
@@ -29572,6 +29878,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-88011-2
@@ -30765,6 +31072,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - ansible_architecture == "aarch64" or ansible_architecture == "ppc64" or ansible_architecture == "ppc64le" or ansible_architecture
     == "s390x" or ansible_architecture == "x86_64"
   tags:
@@ -30892,6 +31200,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-85917-3
   - NIST-800-171-3.1.7
@@ -31017,6 +31326,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-85917-3
@@ -31143,6 +31453,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   tags:
   - CCE-85917-3
   - NIST-800-171-3.1.7
@@ -31268,6 +31579,7 @@
   - restrict_strategy | bool
   - '"audit" in ansible_facts.packages'
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - not ( ansible_architecture == "aarch64" )
   - audit_arch == "b64"
   tags:
   - CCE-85917-3
@@ -32743,10 +33055,10 @@
   - reboot_required | bool
   - restrict_strategy | bool
 
-- name: Check if watch rule for /var/log/faillock already exists in /etc/audit/rules.d/
+- name: Check if watch rule for {{ var_accounts_passwords_pam_faillock_dir }} already exists in /etc/audit/rules.d/
   find:
     paths: /etc/audit/rules.d
-    contains: ^\s*-w\s+/var/log/faillock\s+-p\s+wa(\s|$)+
+    contains: ^\s*-w\s+{{ var_accounts_passwords_pam_faillock_dir }}\s+-p\s+wa(\s|$)+
     patterns: '*.rules'
   register: find_existing_watch_rules_d
   when:
@@ -32868,10 +33180,10 @@
   - reboot_required
   - restrict_strategy
 
-- name: Add watch rule for /var/log/faillock in /etc/audit/rules.d/
+- name: Add watch rule for {{ var_accounts_passwords_pam_faillock_dir }} in /etc/audit/rules.d/
   lineinfile:
     path: '{{ all_files[0] }}'
-    line: -w /var/log/faillock -p wa -k logins
+    line: -w {{ var_accounts_passwords_pam_faillock_dir }} -p wa -k logins
     create: true
     mode: '0640'
   when:
@@ -32900,10 +33212,10 @@
   - reboot_required
   - restrict_strategy
 
-- name: Check if watch rule for /var/log/faillock already exists in /etc/audit/audit.rules
+- name: Check if watch rule for {{ var_accounts_passwords_pam_faillock_dir }} already exists in /etc/audit/audit.rules
   find:
     paths: /etc/audit/
-    contains: ^\s*-w\s+/var/log/faillock\s+-p\s+wa(\s|$)+
+    contains: ^\s*-w\s+{{ var_accounts_passwords_pam_faillock_dir }}\s+-p\s+wa(\s|$)+
     patterns: audit.rules
   register: find_existing_watch_audit_rules
   when:
@@ -32931,9 +33243,9 @@
   - reboot_required
   - restrict_strategy
 
-- name: Add watch rule for /var/log/faillock in /etc/audit/audit.rules
+- name: Add watch rule for {{ var_accounts_passwords_pam_faillock_dir }} in /etc/audit/audit.rules
   lineinfile:
-    line: -w /var/log/faillock -p wa -k logins
+    line: -w {{ var_accounts_passwords_pam_faillock_dir }} -p wa -k logins
     state: present
     dest: /etc/audit/audit.rules
     create: true
@@ -37464,7 +37776,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*freq\s*=\s*
       state: absent
     check_mode: true
@@ -37473,7 +37785,7 @@
   - name: Deduplicate values from /etc/audit/auditd.conf
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*freq\s*=\s*
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -37528,7 +37840,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*local_events\s*=\s*
       state: absent
     check_mode: true
@@ -37537,7 +37849,7 @@
   - name: Deduplicate values from /etc/audit/auditd.conf
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*local_events\s*=\s*
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -37593,7 +37905,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*log_format\s*=\s*
       state: absent
     check_mode: true
@@ -37602,7 +37914,7 @@
   - name: Deduplicate values from /etc/audit/auditd.conf
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*log_format\s*=\s*
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -37654,12 +37966,34 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
 
-- name: Set hostname as computer node name in audit logs
+- name: Set type of computer node name logging in audit logs - Define Value to Be Used in the Remediation
+  ansible.builtin.set_fact: auditd_name_format_split="{{ var_auditd_name_format.split('|')[0] }}"
+  when:
+  - auditd_name_format | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - '"audit" in ansible_facts.packages'
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-83686-6
+  - NIST-800-53-AU-3
+  - NIST-800-53-CM-6
+  - auditd_name_format
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Set type of computer node name logging in audit logs
   block:
   - name: Check for duplicate values
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*name_format\s*=\s*
       state: absent
     check_mode: true
@@ -37668,7 +38002,7 @@
   - name: Deduplicate values from /etc/audit/auditd.conf
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*name_format\s*=\s*
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -37677,7 +38011,7 @@
       path: /etc/audit/auditd.conf
       create: true
       regexp: (?i)^\s*name_format\s*=\s*
-      line: name_format = hostname
+      line: name_format = {{ auditd_name_format_split }}
       state: present
   when:
   - auditd_name_format | bool
@@ -37724,7 +38058,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*overflow_action\s*=\s*
       state: absent
     check_mode: true
@@ -37733,7 +38067,7 @@
   - name: Deduplicate values from /etc/audit/auditd.conf
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*overflow_action\s*=\s*
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -37788,7 +38122,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*write_logs\s*=\s*
       state: absent
     check_mode: true
@@ -37797,7 +38131,7 @@
   - name: Deduplicate values from /etc/audit/auditd.conf
     lineinfile:
       path: /etc/audit/auditd.conf
-      create: false
+      create: true
       regexp: (?i)^\s*write_logs\s*=\s*
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -41249,14 +41583,34 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
 
-- name: Get all world-writable directories with no sticky bits set
-  shell: 'set -o pipefail
-
-    df --local -P | awk ''{if (NR!=1) print $6}'' | xargs -I ''{}'' find ''{}'' -xdev -type d \( -perm -0002 -a ! -perm -1000
-    \) 2>/dev/null
-
-    '
-  register: dir_output
+- name: Verify that All World-Writable Directories Have Sticky Bits Set - Define Excluded (Non-Local) File Systems and Paths
+  ansible.builtin.set_fact:
+    excluded_fstypes:
+    - afs
+    - ceph
+    - cifs
+    - smb3
+    - smbfs
+    - sshfs
+    - ncpfs
+    - ncp
+    - nfs
+    - nfs4
+    - gfs
+    - gfs2
+    - glusterfs
+    - gpfs
+    - pvfs2
+    - ocfs2
+    - lustre
+    - davfs
+    - fuse.sshfs
+    excluded_paths:
+    - dev
+    - proc
+    - run
+    - sys
+    search_paths: []
   tags:
   - CCE-83895-3
   - NIST-800-53-AC-6(1)
@@ -41275,12 +41629,179 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
 
-- name: Ensure sticky bit is set
-  file:
+- name: Verify that All World-Writable Directories Have Sticky Bits Set - Find Relevant Root Directories Ignoring Pre-Defined
+    Excluded Paths
+  ansible.builtin.find:
+    paths: /
+    file_type: directory
+    excludes: '{{ excluded_paths }}'
+    hidden: true
+    recurse: false
+  register: result_relevant_root_dirs
+  tags:
+  - CCE-83895-3
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - dir_perms_world_writable_sticky_bits
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_sticky_bits | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Verify that All World-Writable Directories Have Sticky Bits Set - Include Relevant Root Directories in a List of Paths
+    to be Searched
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.path]) }}'
+  loop: '{{ result_relevant_root_dirs.files }}'
+  tags:
+  - CCE-83895-3
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - dir_perms_world_writable_sticky_bits
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_sticky_bits | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Verify that All World-Writable Directories Have Sticky Bits Set - Increment Search Paths List with Local Partitions
+    Mount Points
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.mount]) }}'
+  loop: '{{ ansible_mounts }}'
+  when:
+  - dir_perms_world_writable_sticky_bits | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - item.fstype not in excluded_fstypes
+  - item.mount != '/'
+  tags:
+  - CCE-83895-3
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - dir_perms_world_writable_sticky_bits
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Verify that All World-Writable Directories Have Sticky Bits Set - Increment Search Paths List with Local NFS File
+    System Targets
+  ansible.builtin.set_fact:
+    search_paths: '{{ search_paths | union([item.device.split('':'')[1]]) }}'
+  loop: '{{ ansible_mounts }}'
+  when:
+  - dir_perms_world_writable_sticky_bits | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - item.device is search("localhost:")
+  tags:
+  - CCE-83895-3
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - dir_perms_world_writable_sticky_bits
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Verify that All World-Writable Directories Have Sticky Bits Set - Define Rule Specific Facts
+  ansible.builtin.set_fact:
+    world_writable_dirs: []
+  tags:
+  - CCE-83895-3
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - dir_perms_world_writable_sticky_bits
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_sticky_bits | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Verify that All World-Writable Directories Have Sticky Bits Set - Find All Uncompliant Directories in Local File Systems
+  ansible.builtin.command:
+    cmd: find {{ item }} -xdev -type d ( -perm -0002 -a ! -perm -1000 )
+  loop: '{{ search_paths }}'
+  changed_when: false
+  register: result_found_dirs
+  tags:
+  - CCE-83895-3
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - dir_perms_world_writable_sticky_bits
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_sticky_bits | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Verify that All World-Writable Directories Have Sticky Bits Set - Create List of World Writable Directories Without
+    Sticky Bit
+  ansible.builtin.set_fact:
+    world_writable_dirs: '{{ world_writable_dirs | union(item.stdout_lines) | list }}'
+  loop: '{{ result_found_dirs.results }}'
+  tags:
+  - CCE-83895-3
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - dir_perms_world_writable_sticky_bits
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+  when:
+  - dir_perms_world_writable_sticky_bits | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+
+- name: Verify that All World-Writable Directories Have Sticky Bits Set - Ensure Sticky Bit is Set on Local World Writable
+    Directories
+  ansible.builtin.file:
     path: '{{ item }}'
     mode: a+t
-  with_items:
-  - '{{ dir_output.stdout_lines }}'
+  loop: '{{ world_writable_dirs }}'
   tags:
   - CCE-83895-3
   - NIST-800-53-AC-6(1)
@@ -42825,11 +43346,35 @@
   - medium_severity
   - no_reboot_needed
 
-- name: Set permissions for /var/log/
+- name: Find /var/log/ file(s)
+  command: 'find -H /var/log/ -maxdepth 1 -perm /u+s,g+ws,o+wt  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  tags:
+  - CCE-83917-5
+  - configure_strategy
+  - file_permissions_var_log
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  when:
+  - configure_strategy | bool
+  - file_permissions_var_log | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+
+- name: Set permissions for /var/log/ file(s)
   file:
-    path: /var/log/
-    state: directory
+    path: '{{ item }}'
     mode: u-s,g-ws,o-wt
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
   tags:
   - CCE-83917-5
   - configure_strategy
@@ -43079,12 +43624,12 @@
   - medium_severity | bool
   - no_reboot_needed | bool
 
-- name: Set permissions for /lib/ recursively
-  file:
-    path: /lib/
-    state: directory
-    recurse: true
-    mode: g-w,o-w
+- name: Find /lib/ file(s) recursively
+  command: 'find -H /lib/  -perm /g+w,o+w  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
   tags:
   - CCE-88693-7
   - NIST-800-53-CM-5
@@ -43104,12 +43649,13 @@
   - medium_severity | bool
   - no_reboot_needed | bool
 
-- name: Set permissions for /lib64/ recursively
+- name: Set permissions for /lib/ file(s)
   file:
-    path: /lib64/
-    state: directory
-    recurse: true
+    path: '{{ item }}'
     mode: g-w,o-w
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
   tags:
   - CCE-88693-7
   - NIST-800-53-CM-5
@@ -43129,12 +43675,12 @@
   - medium_severity | bool
   - no_reboot_needed | bool
 
-- name: Set permissions for /usr/lib/ recursively
-  file:
-    path: /usr/lib/
-    state: directory
-    recurse: true
-    mode: g-w,o-w
+- name: Find /lib64/ file(s) recursively
+  command: 'find -H /lib64/  -perm /g+w,o+w  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
   tags:
   - CCE-88693-7
   - NIST-800-53-CM-5
@@ -43154,12 +43700,115 @@
   - medium_severity | bool
   - no_reboot_needed | bool
 
-- name: Set permissions for /usr/lib64/ recursively
+- name: Set permissions for /lib64/ file(s)
   file:
-    path: /usr/lib64/
-    state: directory
-    recurse: true
+    path: '{{ item }}'
     mode: g-w,o-w
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
+  tags:
+  - CCE-88693-7
+  - NIST-800-53-CM-5
+  - NIST-800-53-CM-5(6)
+  - NIST-800-53-CM-5(6).1
+  - configure_strategy
+  - dir_permissions_library_dirs
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  when:
+  - configure_strategy | bool
+  - dir_permissions_library_dirs | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+
+- name: Find /usr/lib/ file(s) recursively
+  command: 'find -H /usr/lib/  -perm /g+w,o+w  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  tags:
+  - CCE-88693-7
+  - NIST-800-53-CM-5
+  - NIST-800-53-CM-5(6)
+  - NIST-800-53-CM-5(6).1
+  - configure_strategy
+  - dir_permissions_library_dirs
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  when:
+  - configure_strategy | bool
+  - dir_permissions_library_dirs | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+
+- name: Set permissions for /usr/lib/ file(s)
+  file:
+    path: '{{ item }}'
+    mode: g-w,o-w
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
+  tags:
+  - CCE-88693-7
+  - NIST-800-53-CM-5
+  - NIST-800-53-CM-5(6)
+  - NIST-800-53-CM-5(6).1
+  - configure_strategy
+  - dir_permissions_library_dirs
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  when:
+  - configure_strategy | bool
+  - dir_permissions_library_dirs | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+
+- name: Find /usr/lib64/ file(s) recursively
+  command: 'find -H /usr/lib64/  -perm /g+w,o+w  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  tags:
+  - CCE-88693-7
+  - NIST-800-53-CM-5
+  - NIST-800-53-CM-5(6)
+  - NIST-800-53-CM-5(6).1
+  - configure_strategy
+  - dir_permissions_library_dirs
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  when:
+  - configure_strategy | bool
+  - dir_permissions_library_dirs | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+
+- name: Set permissions for /usr/lib64/ file(s)
+  file:
+    path: '{{ item }}'
+    mode: g-w,o-w
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
   tags:
   - CCE-88693-7
   - NIST-800-53-CM-5
@@ -48600,7 +49249,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/selinux/config
-      create: false
+      create: true
       regexp: ^SELINUXTYPE=
       state: absent
     check_mode: true
@@ -48609,7 +49258,7 @@
   - name: Deduplicate values from /etc/selinux/config
     lineinfile:
       path: /etc/selinux/config
-      create: false
+      create: true
       regexp: ^SELINUXTYPE=
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -48648,7 +49297,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/selinux/config
-      create: false
+      create: true
       regexp: ^SELINUX=
       state: absent
     check_mode: true
@@ -48657,7 +49306,7 @@
   - name: Deduplicate values from /etc/selinux/config
     lineinfile:
       path: /etc/selinux/config
-      create: false
+      create: true
       regexp: ^SELINUX=
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -49111,11 +49760,12 @@
   - medium_severity
   - no_reboot_needed
 
-- name: Set permissions for /etc/cron.d/
-  file:
-    path: /etc/cron.d/
-    state: directory
-    mode: u-s,g-xwrs,o-xwrt
+- name: Find /etc/cron.d/ file(s)
+  command: 'find -H /etc/cron.d/ -maxdepth 1 -perm /u+s,g+xwrs,o+xwrt  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
   when:
   - configure_strategy | bool
   - file_permissions_cron_d | bool
@@ -49136,11 +49786,39 @@
   - medium_severity
   - no_reboot_needed
 
-- name: Set permissions for /etc/cron.daily/
+- name: Set permissions for /etc/cron.d/ file(s)
   file:
-    path: /etc/cron.daily/
-    state: directory
+    path: '{{ item }}'
     mode: u-s,g-xwrs,o-xwrt
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
+  when:
+  - configure_strategy | bool
+  - file_permissions_cron_d | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-84183-3
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSSv4-2.2.6
+  - configure_strategy
+  - file_permissions_cron_d
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: Find /etc/cron.daily/ file(s)
+  command: 'find -H /etc/cron.daily/ -maxdepth 1 -perm /u+s,g+xwrs,o+xwrt  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
   when:
   - configure_strategy | bool
   - file_permissions_cron_daily | bool
@@ -49161,11 +49839,39 @@
   - medium_severity
   - no_reboot_needed
 
-- name: Set permissions for /etc/cron.hourly/
+- name: Set permissions for /etc/cron.daily/ file(s)
   file:
-    path: /etc/cron.hourly/
-    state: directory
+    path: '{{ item }}'
     mode: u-s,g-xwrs,o-xwrt
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
+  when:
+  - configure_strategy | bool
+  - file_permissions_cron_daily | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-84175-9
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSSv4-2.2.6
+  - configure_strategy
+  - file_permissions_cron_daily
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: Find /etc/cron.hourly/ file(s)
+  command: 'find -H /etc/cron.hourly/ -maxdepth 1 -perm /u+s,g+xwrs,o+xwrt  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
   when:
   - configure_strategy | bool
   - file_permissions_cron_hourly | bool
@@ -49186,11 +49892,39 @@
   - medium_severity
   - no_reboot_needed
 
-- name: Set permissions for /etc/cron.monthly/
+- name: Set permissions for /etc/cron.hourly/ file(s)
   file:
-    path: /etc/cron.monthly/
-    state: directory
+    path: '{{ item }}'
     mode: u-s,g-xwrs,o-xwrt
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
+  when:
+  - configure_strategy | bool
+  - file_permissions_cron_hourly | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-84173-4
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSSv4-2.2.6
+  - configure_strategy
+  - file_permissions_cron_hourly
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: Find /etc/cron.monthly/ file(s)
+  command: 'find -H /etc/cron.monthly/ -maxdepth 1 -perm /u+s,g+xwrs,o+xwrt  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
   when:
   - configure_strategy | bool
   - file_permissions_cron_monthly | bool
@@ -49211,11 +49945,66 @@
   - medium_severity
   - no_reboot_needed
 
-- name: Set permissions for /etc/cron.weekly/
+- name: Set permissions for /etc/cron.monthly/ file(s)
   file:
-    path: /etc/cron.weekly/
-    state: directory
+    path: '{{ item }}'
     mode: u-s,g-xwrs,o-xwrt
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
+  when:
+  - configure_strategy | bool
+  - file_permissions_cron_monthly | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-84181-7
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSSv4-2.2.6
+  - configure_strategy
+  - file_permissions_cron_monthly
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: Find /etc/cron.weekly/ file(s)
+  command: 'find -H /etc/cron.weekly/ -maxdepth 1 -perm /u+s,g+xwrs,o+xwrt  -type d '
+  register: files_found
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when:
+  - configure_strategy | bool
+  - file_permissions_cron_weekly | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-84187-4
+  - NIST-800-53-AC-6(1)
+  - NIST-800-53-CM-6(a)
+  - PCI-DSSv4-2.2.6
+  - configure_strategy
+  - file_permissions_cron_weekly
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+
+- name: Set permissions for /etc/cron.weekly/ file(s)
+  file:
+    path: '{{ item }}'
+    mode: u-s,g-xwrs,o-xwrt
+    state: directory
+  with_items:
+  - '{{ files_found.stdout_lines }}'
   when:
   - configure_strategy | bool
   - file_permissions_cron_weekly | bool
@@ -49511,6 +50300,28 @@
   - no_reboot_needed | bool
   - package_vsftpd_removed | bool
 
+- name: Ensure s-nail is installed
+  package:
+    name: s-nail
+    state: present
+  when:
+  - enable_strategy | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - package_s_nail_installed | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  tags:
+  - CCE-86608-7
+  - NIST-800-53-CM-3(5)
+  - enable_strategy
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - package_s-nail_installed
+
 - name: Ensure sendmail is removed
   package:
     name: sendmail
@@ -49609,7 +50420,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/aliases
-      create: false
+      create: true
       regexp: ^\s*postmaster\s*:\s*
       state: absent
     check_mode: true
@@ -49618,7 +50429,7 @@
   - name: Deduplicate values from /etc/aliases
     lineinfile:
       path: /etc/aliases
-      create: false
+      create: true
       regexp: ^\s*postmaster\s*:\s*
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -49718,7 +50529,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/postfix/main.cf
-      create: false
+      create: true
       regexp: ^[ \t]*smtpd_client_restrictions\s*=\s*
       state: absent
     check_mode: true
@@ -49727,7 +50538,7 @@
   - name: Deduplicate values from /etc/postfix/main.cf
     lineinfile:
       path: /etc/postfix/main.cf
-      create: false
+      create: true
       regexp: ^[ \t]*smtpd_client_restrictions\s*=\s*
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -50139,7 +50950,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/chrony.conf
-      create: false
+      create: true
       regexp: ^\s*port\s+
       state: absent
     check_mode: true
@@ -50148,7 +50959,7 @@
   - name: Deduplicate values from /etc/chrony.conf
     lineinfile:
       path: /etc/chrony.conf
-      create: false
+      create: true
       regexp: ^\s*port\s+
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -50183,7 +50994,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/chrony.conf
-      create: false
+      create: true
       regexp: ^\s*cmdport\s+
       state: absent
     check_mode: true
@@ -50192,7 +51003,7 @@
   - name: Deduplicate values from /etc/chrony.conf
     lineinfile:
       path: /etc/chrony.conf
-      create: false
+      create: true
       regexp: ^\s*cmdport\s+
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -50243,8 +51054,8 @@
   - no_reboot_needed | bool
   - restrict_strategy | bool
 
-- name: Check that /etc/ntp.conf exist
-  stat:
+- name: Configure Time Service Maxpoll Interval - Check That /etc/ntp.conf Exist
+  ansible.builtin.stat:
     path: /etc/ntp.conf
   register: ntp_conf_exist_result
   when:
@@ -50268,8 +51079,8 @@
   - no_reboot_needed
   - restrict_strategy
 
-- name: Update the maxpoll values in /etc/ntp.conf
-  replace:
+- name: Configure Time Service Maxpoll Interval - Update the Maxpoll Values in /etc/ntp.conf
+  ansible.builtin.replace:
     path: /etc/ntp.conf
     regexp: ^(server.*maxpoll)[ ]+[0-9]+(.*)$
     replace: \1 {{ var_time_service_set_maxpoll }}\2
@@ -50295,8 +51106,8 @@
   - no_reboot_needed
   - restrict_strategy
 
-- name: Set the maxpoll values in /etc/ntp.conf
-  replace:
+- name: Configure Time Service Maxpoll Interval - Set the Maxpoll Values in /etc/ntp.conf
+  ansible.builtin.replace:
     path: /etc/ntp.conf
     regexp: (^server\s+((?!maxpoll).)*)$
     replace: \1 maxpoll {{ var_time_service_set_maxpoll }}\n
@@ -50322,8 +51133,8 @@
   - no_reboot_needed
   - restrict_strategy
 
-- name: Check that /etc/chrony.conf exist
-  stat:
+- name: Configure Time Service Maxpoll Interval - Check That /etc/chrony.conf Exist
+  ansible.builtin.stat:
     path: /etc/chrony.conf
   register: chrony_conf_exist_result
   when:
@@ -50347,17 +51158,9 @@
   - no_reboot_needed
   - restrict_strategy
 
-- name: Get get conf files from /etc/chrony.conf
-  shell: 'set -o pipefail
-
-    CHRONY_NAME=/etc/chrony.conf
-
-    CHRONY_PATH=${CHRONY_NAME%%.*}
-
-    find ${CHRONY_PATH}.* -type f -name ''*.conf''
-
-    '
-  register: update_chrony_files
+- name: Configure Time Service Maxpoll Interval - Set Chrony Path Facts
+  ansible.builtin.set_fact:
+    chrony_path: /etc/chrony.conf
   when:
   - chronyd_or_ntpd_set_maxpoll | bool
   - low_complexity | bool
@@ -50367,8 +51170,6 @@
   - restrict_strategy | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - ( "chrony" in ansible_facts.packages or "ntp" in ansible_facts.packages )
-  - chrony_conf_exist_result.stat.exists
-  changed_when: false
   tags:
   - CCE-88648-1
   - NIST-800-53-AU-12(1)
@@ -50381,12 +51182,39 @@
   - no_reboot_needed
   - restrict_strategy
 
-- name: Update the maxpoll values in /etc/chrony.conf
-  replace:
-    path: '{{ item }}'
+- name: Configure Time Service Maxpoll Interval - Get Conf Files from {{ chrony_path | dirname }}
+  ansible.builtin.find:
+    path: '{{ chrony_path | dirname }}'
+    patterns: '*.conf'
+    file_type: file
+  register: chrony_conf_files
+  when:
+  - chronyd_or_ntpd_set_maxpoll | bool
+  - low_complexity | bool
+  - low_disruption | bool
+  - medium_severity | bool
+  - no_reboot_needed | bool
+  - restrict_strategy | bool
+  - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
+  - ( "chrony" in ansible_facts.packages or "ntp" in ansible_facts.packages )
+  tags:
+  - CCE-88648-1
+  - NIST-800-53-AU-12(1)
+  - NIST-800-53-AU-8(1)(b)
+  - NIST-800-53-CM-6(a)
+  - chronyd_or_ntpd_set_maxpoll
+  - low_complexity
+  - low_disruption
+  - medium_severity
+  - no_reboot_needed
+  - restrict_strategy
+
+- name: Configure Time Service Maxpoll Interval - Update the Maxpoll Values in /etc/chrony.conf
+  ansible.builtin.replace:
+    path: '{{ item.path }}'
     regexp: ^((?:server|pool|peer).*maxpoll)[ ]+[0-9]+(.*)$
     replace: \1 {{ var_time_service_set_maxpoll }}\2
-  loop: '{{ update_chrony_files.stdout_lines|list|flatten|unique }}'
+  loop: '{{ chrony_conf_files.files }}'
   when:
   - chronyd_or_ntpd_set_maxpoll | bool
   - low_complexity | bool
@@ -50396,7 +51224,7 @@
   - restrict_strategy | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - ( "chrony" in ansible_facts.packages or "ntp" in ansible_facts.packages )
-  - chrony_conf_exist_result.stat.exists
+  - chrony_conf_files.matched
   tags:
   - CCE-88648-1
   - NIST-800-53-AU-12(1)
@@ -50409,12 +51237,12 @@
   - no_reboot_needed
   - restrict_strategy
 
-- name: Set the maxpoll values in /etc/chrony.conf
-  replace:
-    path: '{{ item }}'
+- name: Configure Time Service Maxpoll Interval - Set the Maxpoll Values in /etc/chrony.conf
+  ansible.builtin.replace:
+    path: '{{ item.path }}'
     regexp: (^(?:server|pool|peer)\s+((?!maxpoll).)*)$
     replace: \1 maxpoll {{ var_time_service_set_maxpoll }}\n
-  loop: '{{ update_chrony_files.stdout_lines|list|flatten|unique }}'
+  loop: '{{ chrony_conf_files.files }}'
   when:
   - chronyd_or_ntpd_set_maxpoll | bool
   - low_complexity | bool
@@ -50424,7 +51252,7 @@
   - restrict_strategy | bool
   - ansible_virtualization_type not in ["docker", "lxc", "openvz", "podman", "container"]
   - ( "chrony" in ansible_facts.packages or "ntp" in ansible_facts.packages )
-  - chrony_conf_exist_result.stat.exists
+  - chrony_conf_files.matched
   tags:
   - CCE-88648-1
   - NIST-800-53-AU-12(1)
@@ -51551,7 +52379,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/ssh/sshd_config
-      create: false
+      create: true
       regexp: (?i)^\s*ClientAliveCountMax\s+
       state: absent
     check_mode: true
@@ -51560,7 +52388,7 @@
   - name: Deduplicate values from /etc/ssh/sshd_config
     lineinfile:
       path: /etc/ssh/sshd_config
-      create: false
+      create: true
       regexp: (?i)^\s*ClientAliveCountMax\s+
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -51571,7 +52399,7 @@
       regexp: (?i)^\s*ClientAliveCountMax\s+
       line: ClientAliveCountMax {{ var_sshd_set_keepalive }}
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -51604,7 +52432,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/ssh/sshd_config
-      create: false
+      create: true
       regexp: (?i)^\s*ClientAliveInterval\s+
       state: absent
     check_mode: true
@@ -51613,7 +52441,7 @@
   - name: Deduplicate values from /etc/ssh/sshd_config
     lineinfile:
       path: /etc/ssh/sshd_config
-      create: false
+      create: true
       regexp: (?i)^\s*ClientAliveInterval\s+
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -51624,7 +52452,7 @@
       regexp: (?i)^\s*ClientAliveInterval\s+
       line: ClientAliveInterval {{ sshd_idle_timeout_value }}
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -51690,7 +52518,7 @@
       regexp: (?i)^\s*{{ "HostbasedAuthentication"| regex_escape }}\s+
       line: HostbasedAuthentication no
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - disable_host_auth | bool
@@ -51882,7 +52710,7 @@
   - name: Check for duplicate values
     lineinfile:
       path: /etc/ssh/sshd_config
-      create: false
+      create: true
       regexp: (?i)^\s*Compression\s+
       state: absent
     check_mode: true
@@ -51891,7 +52719,7 @@
   - name: Deduplicate values from /etc/ssh/sshd_config
     lineinfile:
       path: /etc/ssh/sshd_config
-      create: false
+      create: true
       regexp: (?i)^\s*Compression\s+
       state: absent
     when: dupes.found is defined and dupes.found > 1
@@ -51902,7 +52730,7 @@
       regexp: (?i)^\s*Compression\s+
       line: Compression {{ var_sshd_disable_compression }}
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -51961,7 +52789,7 @@
       regexp: (?i)^\s*{{ "PermitEmptyPasswords"| regex_escape }}\s+
       line: PermitEmptyPasswords no
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - high_severity | bool
@@ -52024,7 +52852,7 @@
       regexp: (?i)^\s*{{ "GSSAPIAuthentication"| regex_escape }}\s+
       line: GSSAPIAuthentication no
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52083,7 +52911,7 @@
       regexp: (?i)^\s*{{ "KerberosAuthentication"| regex_escape }}\s+
       line: KerberosAuthentication no
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52142,7 +52970,7 @@
       regexp: (?i)^\s*{{ "IgnoreRhosts"| regex_escape }}\s+
       line: IgnoreRhosts yes
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52203,7 +53031,7 @@
       regexp: (?i)^\s*{{ "PermitRootLogin"| regex_escape }}\s+
       line: PermitRootLogin no
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52269,7 +53097,7 @@
       regexp: (?i)^\s*{{ "IgnoreUserKnownHosts"| regex_escape }}\s+
       line: IgnoreUserKnownHosts yes
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52328,7 +53156,7 @@
       regexp: (?i)^\s*{{ "X11Forwarding"| regex_escape }}\s+
       line: X11Forwarding no
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52384,7 +53212,7 @@
       regexp: (?i)^\s*{{ "PermitUserEnvironment"| regex_escape }}\s+
       line: PermitUserEnvironment no
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52446,7 +53274,7 @@
       regexp: (?i)^\s*{{ "UsePAM"| regex_escape }}\s+
       line: UsePAM yes
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52501,7 +53329,7 @@
       regexp: (?i)^\s*{{ "PubkeyAuthentication"| regex_escape }}\s+
       line: PubkeyAuthentication yes
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52555,7 +53383,7 @@
       regexp: (?i)^\s*{{ "StrictModes"| regex_escape }}\s+
       line: StrictModes yes
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52613,7 +53441,7 @@
       regexp: (?i)^\s*{{ "Banner"| regex_escape }}\s+
       line: Banner /etc/issue
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52675,7 +53503,7 @@
       regexp: (?i)^\s*{{ "PrintLastLog"| regex_escape }}\s+
       line: PrintLastLog yes
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52731,7 +53559,7 @@
       regexp: (?i)^\s*{{ "RekeyLimit"| regex_escape }}\s+
       line: RekeyLimit {{ var_rekey_limit_size }} {{ var_rekey_limit_time }}
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - configure_strategy | bool
@@ -52785,7 +53613,7 @@
       regexp: (?i)^\s*{{ "LogLevel"| regex_escape }}\s+
       line: LogLevel VERBOSE
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -52844,7 +53672,7 @@
       regexp: (?i)^\s*{{ "X11UseLocalhost"| regex_escape }}\s+
       line: X11UseLocalhost yes
       state: present
-      insertbefore: ^[#\s]*Match
+      insertbefore: BOF
       validate: /usr/sbin/sshd -t -f %s
   when:
   - low_complexity | bool
@@ -53162,7 +53990,7 @@
   - name: Enable Smartcards in SSSD - Check if expected PAM module line is present in /etc/pam.d/smartcard-auth
     ansible.builtin.lineinfile:
       path: /etc/pam.d/smartcard-auth
-      regexp: ^\s*auth\s+sufficient\s+pam_sss.so\s*.*
+      regexp: ^\s*auth\s+{{ 'sufficient' | regex_escape() }}\s+pam_sss.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -53207,7 +54035,7 @@
   - name: Enable Smartcards in SSSD - Check if the required PAM module option is present in /etc/pam.d/smartcard-auth
     ansible.builtin.lineinfile:
       path: /etc/pam.d/smartcard-auth
-      regexp: ^\s*auth\s+sufficient\s+pam_sss.so\s*.*\sallow_missing_name\b
+      regexp: ^\s*auth\s+{{ 'sufficient' | regex_escape() }}\s+pam_sss.so\s*.*\sallow_missing_name\b
       state: absent
     check_mode: true
     changed_when: false
@@ -53216,7 +54044,7 @@
     ansible.builtin.lineinfile:
       path: /etc/pam.d/smartcard-auth
       backrefs: true
-      regexp: ^(\s*auth\s+sufficient\s+pam_sss.so.*)
+      regexp: ^(\s*auth\s+{{ 'sufficient' | regex_escape() }}\s+pam_sss.so.*)
       line: \1 allow_missing_name
       state: present
     register: result_pam_allow_missing_name_add
@@ -53225,7 +54053,7 @@
   - name: Enable Smartcards in SSSD - Check if expected PAM module line is present in /etc/pam.d/system-auth
     ansible.builtin.lineinfile:
       path: /etc/pam.d/system-auth
-      regexp: ^\s*auth\s+\[success=done authinfo_unavail=ignore ignore=ignore default=die\]\s+pam_sss.so\s*.*
+      regexp: ^\s*auth\s+{{ '\[success=done authinfo_unavail=ignore ignore=ignore default=die\]' | regex_escape() }}\s+pam_sss.so\s*.*
       state: absent
     check_mode: true
     changed_when: false
@@ -53270,7 +54098,7 @@
   - name: Enable Smartcards in SSSD - Check if the required PAM module option is present in /etc/pam.d/system-auth
     ansible.builtin.lineinfile:
       path: /etc/pam.d/system-auth
-      regexp: ^\s*auth\s+\[success=done authinfo_unavail=ignore ignore=ignore default=die\]\s+pam_sss.so\s*.*\stry_cert_auth\b
+      regexp: ^\s*auth\s+{{ '\[success=done authinfo_unavail=ignore ignore=ignore default=die\]' | regex_escape() }}\s+pam_sss.so\s*.*\stry_cert_auth\b
       state: absent
     check_mode: true
     changed_when: false
@@ -53279,7 +54107,7 @@
     ansible.builtin.lineinfile:
       path: /etc/pam.d/system-auth
       backrefs: true
-      regexp: ^(\s*auth\s+\[success=done authinfo_unavail=ignore ignore=ignore default=die\]\s+pam_sss.so.*)
+      regexp: ^(\s*auth\s+{{ '\[success=done authinfo_unavail=ignore ignore=ignore default=die\]' | regex_escape() }}\s+pam_sss.so.*)
       line: \1 try_cert_auth
       state: present
     register: result_pam_try_cert_auth_add
