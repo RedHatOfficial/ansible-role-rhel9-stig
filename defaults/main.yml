@@ -44,6 +44,7 @@ var_auditd_admin_space_left_percentage: '5'
 var_auditd_max_log_file_action: rotate
 var_auditd_space_left_action: email
 var_auditd_space_left_percentage: '25'
+var_auditd_name_format: hostname|fqd|numeric
 rsyslog_remote_loghost_address: logcollector
 sysctl_net_ipv6_conf_all_accept_ra_value: '0'
 sysctl_net_ipv6_conf_all_accept_redirects_value: '0'
@@ -254,6 +255,8 @@ dir_ownership_library_dirs: true
 dir_permissions_library_dirs: true
 dir_perms_world_writable_root_owned: true
 dir_perms_world_writable_sticky_bits: true
+directory_group_ownership_var_log_audit: true
+directory_ownership_var_log_audit: true
 disable_ctrlaltdel_burstaction: true
 disable_ctrlaltdel_reboot: true
 disable_host_auth: true
@@ -263,6 +266,7 @@ disallow_bypass_password_sudo: true
 display_login_attempts: true
 enable_authselect: true
 enable_dracut_fips_module: true
+enable_fips_mode: true
 enable_strategy: true
 ensure_gpgcheck_globally_activated: true
 ensure_gpgcheck_local_packages: true
@@ -422,6 +426,7 @@ package_quagga_removed: true
 package_rng_tools_installed: true
 package_rsyslog_gnutls_installed: true
 package_rsyslog_installed: true
+package_s_nail_installed: true
 package_sendmail_removed: true
 package_subscription_manager_installed: true
 package_sudo_installed: true
