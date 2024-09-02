@@ -1,5 +1,5 @@
 ---
-# defaults file for rhel9_stig
+# defaults file for rhel9-stig
 var_aide_scan_notification_email: root@localhost
 var_system_crypto_policy: FIPS
 inactivity_timeout_value: '900'

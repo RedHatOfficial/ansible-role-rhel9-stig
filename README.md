@@ -39,12 +39,12 @@ N/A
 Example Role Usage
 ----------------
 
-Run `ansible-galaxy install RedHatOfficial.rhel9_stig` to
+Run `ansible-galaxy install RedHatOfficial.rhel9-stig` to
 download and install the role. Then, you can use the following playbook snippet to run the Ansible role:
 
     - hosts: all
       roles:
-         - { role: RedHatOfficial.rhel9_stig }
+         - { role: RedHatOfficial.rhel9-stig }
 
 Next, check the playbook using (on the localhost) the following example:
 

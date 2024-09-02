@@ -1,5 +1,5 @@
 galaxy_info:
-  role_name: rhel9_stig
+  role_name: rhel9-stig
   author: ComplianceAsCode development team
   description: DISA STIG for Red Hat Enterprise Linux 9
 
