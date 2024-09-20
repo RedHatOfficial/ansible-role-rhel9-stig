@@ -13496,7 +13496,7 @@
   ansible.builtin.find:
     paths: /etc
     patterns: bashrc
-    contains: .*case "$name" in sshd|login\) tmux ;; esac.*
+    contains: .*case "$name" in \(sshd|login\) tmux ;; esac.*
   register: tmux_in_bashrc
   when:
   - DISA_STIG_RHEL_09_412015 | bool
@@ -13522,7 +13522,7 @@
   ansible.builtin.find:
     paths: /etc/profile.d
     patterns: '*.sh'
-    contains: .*case "$name" in sshd|login\) tmux ;; esac.*
+    contains: .*case "$name" in \(sshd|login\) tmux ;; esac.*
   register: tmux_in_profile_d
   when:
   - DISA_STIG_RHEL_09_412015 | bool
