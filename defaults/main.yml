@@ -24,6 +24,7 @@ var_password_pam_minlen: '15'
 var_password_pam_ocredit: '-1'
 var_password_pam_retry: '3'
 var_password_pam_ucredit: '-1'
+var_password_hashing_algorithm_pam: sha512
 var_password_hashing_algorithm: SHA512
 var_logind_session_timeout: '900'
 var_smartcard_drivers: cac
@@ -319,6 +320,7 @@ DISA_STIG_RHEL_09_271115: true
 DISA_STIG_RHEL_09_291010: true
 DISA_STIG_RHEL_09_291015: true
 DISA_STIG_RHEL_09_291020: true
+DISA_STIG_RHEL_09_291025: true
 DISA_STIG_RHEL_09_291030: true
 DISA_STIG_RHEL_09_291035: true
 DISA_STIG_RHEL_09_291040: true
@@ -337,10 +339,12 @@ DISA_STIG_RHEL_09_411085: true
 DISA_STIG_RHEL_09_411090: true
 DISA_STIG_RHEL_09_411100: true
 DISA_STIG_RHEL_09_411105: true
+DISA_STIG_RHEL_09_411115: true
 DISA_STIG_RHEL_09_412010: true
 DISA_STIG_RHEL_09_412015: true
 DISA_STIG_RHEL_09_412020: true
 DISA_STIG_RHEL_09_412025: true
+DISA_STIG_RHEL_09_412030: true
 DISA_STIG_RHEL_09_412035: true
 DISA_STIG_RHEL_09_412040: true
 DISA_STIG_RHEL_09_412045: true
@@ -353,6 +357,7 @@ DISA_STIG_RHEL_09_412075: true
 DISA_STIG_RHEL_09_412080: true
 DISA_STIG_RHEL_09_431010: true
 DISA_STIG_RHEL_09_431015: true
+DISA_STIG_RHEL_09_431020: true
 DISA_STIG_RHEL_09_431025: true
 DISA_STIG_RHEL_09_431030: true
 DISA_STIG_RHEL_09_432010: true
@@ -506,6 +511,7 @@ DISA_STIG_needed_rules: true
 account_disable_post_pw_expiration: true
 account_password_pam_faillock_password_auth: true
 account_password_pam_faillock_system_auth: true
+account_password_selinux_faillock_dir: true
 accounts_have_homedir_login_defs: true
 accounts_logon_fail_delay: true
 accounts_max_concurrent_login_sessions: true
@@ -545,6 +551,7 @@ accounts_umask_etc_csh_cshrc: true
 accounts_umask_etc_login_defs: true
 accounts_umask_etc_profile: true
 accounts_umask_interactive_users: true
+accounts_user_dot_no_world_writable_programs: true
 accounts_user_interactive_home_directory_defined: true
 accounts_user_interactive_home_directory_exists: true
 aide_build_database: true
@@ -658,6 +665,7 @@ configure_strategy: true
 configure_tmux_lock_after_time: true
 configure_tmux_lock_command: true
 configure_tmux_lock_keybinding: true
+configure_usbguard_auditbackend: true
 coredump_disable_backtraces: true
 coredump_disable_storage: true
 dconf_db_up_to_date: true
@@ -830,6 +838,7 @@ no_empty_passwords_etc_shadow: true
 no_host_based_files: true
 no_reboot_needed: true
 no_shelllogin_for_systemaccounts: true
+no_tmux_in_shells: true
 no_user_host_based_files: true
 package_aide_installed: true
 package_audispd_plugins_installed: true
