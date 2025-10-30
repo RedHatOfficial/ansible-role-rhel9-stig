@@ -5,7 +5,7 @@ Ansible Role for DISA STIG for Red Hat Enterprise Linux 9
   
 Profile Description:  
 This profile contains configuration checks that align to the  
-DISA STIG for Red Hat Enterprise Linux 9 V2R4.  
+DISA STIG for Red Hat Enterprise Linux 9 V2R5.  
 In addition to being applicable to Red Hat Enterprise Linux 9, this  
 configuration baseline is applicable to the operating system tier of  
 Red Hat technologies that are based on Red Hat Enterprise Linux 9, such as:  
