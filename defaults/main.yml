@@ -29,7 +29,7 @@ var_smartcard_drivers: cac
 var_account_disable_post_pw_expiration: '35'
 var_accounts_maximum_age_login_defs: '60'
 var_accounts_minimum_age_login_defs: '1'
-var_password_pam_unix_rounds: '5000'
+var_password_pam_unix_rounds: '100000'
 var_accounts_fail_delay: '4'
 var_accounts_max_concurrent_login_sessions: '10'
 var_accounts_tmout: '600'
@@ -70,6 +70,7 @@ firewalld_sshd_zone: public
 var_sshd_disable_compression: 'no'
 var_rekey_limit_size: 1G
 var_rekey_limit_time: 1h
+sshd_strong_macs: hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512
 var_sssd_certificate_verification_digest_function: sha512
 var_audit_failure_mode: '2'
 var_auditd_disk_error_action: halt
@@ -81,6 +82,7 @@ var_auditd_max_log_file_action: rotate
 var_auditd_space_left_action: email
 var_auditd_space_left_percentage: '25'
 var_auditd_name_format: hostname|fqd|numeric
+DISA_STIG_RHEL_09_171011: true
 DISA_STIG_RHEL_09_211020: true
 DISA_STIG_RHEL_09_211030: true
 DISA_STIG_RHEL_09_211040: true
@@ -139,6 +141,8 @@ DISA_STIG_RHEL_09_215080: true
 DISA_STIG_RHEL_09_215085: true
 DISA_STIG_RHEL_09_215090: true
 DISA_STIG_RHEL_09_215095: true
+DISA_STIG_RHEL_09_215100: true
+DISA_STIG_RHEL_09_215105: true
 DISA_STIG_RHEL_09_231040: true
 DISA_STIG_RHEL_09_231045: true
 DISA_STIG_RHEL_09_231050: true
@@ -189,6 +193,8 @@ DISA_STIG_RHEL_09_232085: true
 DISA_STIG_RHEL_09_232090: true
 DISA_STIG_RHEL_09_232095: true
 DISA_STIG_RHEL_09_232100: true
+DISA_STIG_RHEL_09_232103: true
+DISA_STIG_RHEL_09_232104: true
 DISA_STIG_RHEL_09_232105: true
 DISA_STIG_RHEL_09_232110: true
 DISA_STIG_RHEL_09_232115: true
@@ -267,7 +273,8 @@ DISA_STIG_RHEL_09_255035: true
 DISA_STIG_RHEL_09_255040: true
 DISA_STIG_RHEL_09_255045: true
 DISA_STIG_RHEL_09_255050: true
-DISA_STIG_RHEL_09_255055: true
+DISA_STIG_RHEL_09_255070: true
+DISA_STIG_RHEL_09_255075: true
 DISA_STIG_RHEL_09_255080: true
 DISA_STIG_RHEL_09_255085: true
 DISA_STIG_RHEL_09_255090: true
@@ -354,6 +361,7 @@ DISA_STIG_RHEL_09_432025: true
 DISA_STIG_RHEL_09_432035: true
 DISA_STIG_RHEL_09_433010: true
 DISA_STIG_RHEL_09_433015: true
+DISA_STIG_RHEL_09_433016: true
 DISA_STIG_RHEL_09_611010: true
 DISA_STIG_RHEL_09_611025: true
 DISA_STIG_RHEL_09_611030: true
@@ -401,7 +409,6 @@ DISA_STIG_RHEL_09_652015: true
 DISA_STIG_RHEL_09_652020: true
 DISA_STIG_RHEL_09_652025: true
 DISA_STIG_RHEL_09_652030: true
-DISA_STIG_RHEL_09_652035: true
 DISA_STIG_RHEL_09_652040: true
 DISA_STIG_RHEL_09_652045: true
 DISA_STIG_RHEL_09_652050: true
@@ -487,11 +494,9 @@ DISA_STIG_RHEL_09_654275: true
 DISA_STIG_RHEL_09_671010: true
 DISA_STIG_RHEL_09_671020: true
 DISA_STIG_RHEL_09_671025: true
-DISA_STIG_RHEL_09_672010: true
 DISA_STIG_RHEL_09_672025: true
 DISA_STIG_RHEL_09_672030: true
 DISA_STIG_RHEL_09_672035: true
-DISA_STIG_RHEL_09_672045: true
 DISA_STIG_RHEL_09_672050: true
 DISA_STIG_needed_rules: true
 account_disable_post_pw_expiration: true
@@ -515,8 +520,8 @@ accounts_password_pam_minclass: true
 accounts_password_pam_minlen: true
 accounts_password_pam_ocredit: true
 accounts_password_pam_pwquality_password_auth: true
+accounts_password_pam_pwquality_retry: true
 accounts_password_pam_pwquality_system_auth: true
-accounts_password_pam_retry: true
 accounts_password_pam_ucredit: true
 accounts_password_pam_unix_rounds_password_auth: true
 accounts_password_pam_unix_rounds_system_auth: true
@@ -617,7 +622,6 @@ audit_rules_usergroup_modification_gshadow: true
 audit_rules_usergroup_modification_opasswd: true
 audit_rules_usergroup_modification_passwd: true
 audit_rules_usergroup_modification_shadow: true
-auditd_audispd_syslog_plugin_activated: true
 auditd_data_disk_error_action_stig: true
 auditd_data_disk_full_action_stig: true
 auditd_data_retention_action_mail_acct: true
@@ -644,6 +648,7 @@ configure_kerberos_crypto_policy: true
 configure_libreswan_crypto_policy: true
 configure_opensc_card_drivers: true
 configure_openssl_crypto_policy: true
+configure_ssh_crypto_policy: true
 configure_strategy: true
 configure_usbguard_auditbackend: true
 coredump_disable_backtraces: true
@@ -656,6 +661,7 @@ dconf_gnome_disable_ctrlaltdel_reboot: true
 dconf_gnome_disable_restart_shutdown: true
 dconf_gnome_disable_user_list: true
 dconf_gnome_lock_screen_on_smartcard_removal: true
+dconf_gnome_login_banner_text: true
 dconf_gnome_screensaver_idle_delay: true
 dconf_gnome_screensaver_lock_delay: true
 dconf_gnome_screensaver_lock_enabled: true
@@ -668,7 +674,10 @@ dir_permissions_library_dirs: true
 dir_perms_world_writable_root_owned: true
 dir_perms_world_writable_sticky_bits: true
 directory_group_ownership_var_log_audit: true
+directory_groupowner_sshd_config_d: true
+directory_owner_sshd_config_d: true
 directory_ownership_var_log_audit: true
+directory_permissions_sshd_config_d: true
 disable_ctrlaltdel_burstaction: true
 disable_ctrlaltdel_reboot: true
 disable_host_auth: true
@@ -677,13 +686,12 @@ disable_users_coredumps: true
 disallow_bypass_password_sudo: true
 display_login_attempts: true
 enable_authselect: true
-enable_dracut_fips_module: true
-enable_fips_mode: true
 enable_strategy: true
 ensure_gpgcheck_globally_activated: true
 ensure_gpgcheck_local_packages: true
 ensure_gpgcheck_never_disabled: true
 ensure_redhat_gpgkey_installed: true
+fapolicy_default_deny: true
 file_audit_tools_group_ownership: true
 file_audit_tools_ownership: true
 file_audit_tools_permissions: true
@@ -704,8 +712,10 @@ file_groupowner_etc_passwd: true
 file_groupowner_etc_shadow: true
 file_groupowner_grub2_cfg: true
 file_groupowner_sshd_config: true
+file_groupowner_sshd_drop_in_config: true
 file_groupowner_var_log: true
 file_groupowner_var_log_messages: true
+file_groupownership_audit_configuration: true
 file_groupownership_home_directories: true
 file_groupownership_system_commands_dirs: true
 file_owner_backup_etc_group: true
@@ -725,11 +735,14 @@ file_owner_etc_passwd: true
 file_owner_etc_shadow: true
 file_owner_grub2_cfg: true
 file_owner_sshd_config: true
+file_owner_sshd_drop_in_config: true
 file_owner_var_log: true
 file_owner_var_log_messages: true
+file_ownership_audit_configuration: true
 file_ownership_binary_dirs: true
 file_ownership_library_dirs: true
 file_permission_user_init_files_root: true
+file_permissions_audit_configuration: true
 file_permissions_backup_etc_group: true
 file_permissions_backup_etc_gshadow: true
 file_permissions_backup_etc_passwd: true
@@ -742,7 +755,6 @@ file_permissions_cron_monthly: true
 file_permissions_cron_weekly: true
 file_permissions_crontab: true
 file_permissions_etc_audit_auditd: true
-file_permissions_etc_audit_rulesd: true
 file_permissions_etc_group: true
 file_permissions_etc_gshadow: true
 file_permissions_etc_passwd: true
@@ -750,6 +762,7 @@ file_permissions_etc_shadow: true
 file_permissions_home_directories: true
 file_permissions_library_dirs: true
 file_permissions_sshd_config: true
+file_permissions_sshd_drop_in_config: true
 file_permissions_sshd_private_key: true
 file_permissions_sshd_pub_key: true
 file_permissions_var_log: true
@@ -822,6 +835,7 @@ package_aide_installed: true
 package_audispd_plugins_installed: true
 package_audit_installed: true
 package_chrony_installed: true
+package_cron_installed: true
 package_crypto_policies_installed: true
 package_fapolicyd_installed: true
 package_firewalld_installed: true
@@ -898,12 +912,12 @@ sshd_enable_pam: true
 sshd_enable_pubkey_auth: true
 sshd_enable_strictmodes: true
 sshd_enable_warning_banner: true
-sshd_include_crypto_policy: true
 sshd_print_last_log: true
 sshd_rekey_limit: true
 sshd_set_idle_timeout: true
 sshd_set_keepalive: true
 sshd_set_loglevel_verbose: true
+sshd_use_strong_macs: true
 sshd_x11_use_localhost: true
 sssd_certificate_verification: true
 sssd_enable_smartcards: true
