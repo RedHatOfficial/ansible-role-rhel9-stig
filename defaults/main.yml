@@ -24,7 +24,7 @@ var_password_pam_retry: '3'
 var_password_pam_ucredit: '-1'
 var_password_hashing_algorithm_pam: sha512
 var_password_hashing_algorithm: SHA512
-var_logind_session_timeout: '900'
+var_logind_session_timeout: '600'
 var_smartcard_drivers: cac
 var_account_disable_post_pw_expiration: '35'
 var_accounts_maximum_age_login_defs: '60'
@@ -58,7 +58,6 @@ sysctl_net_ipv4_tcp_syncookies_value: '1'
 var_networkmanager_dns_mode: default
 var_removable_partition: /dev/cdrom
 sysctl_kernel_kptr_restrict_value: '1'
-var_slub_debug_options: P
 var_selinux_policy_name: targeted
 var_selinux_state: enforcing
 var_postfix_root_mail_alias: change_me@localhost
@@ -70,7 +69,6 @@ firewalld_sshd_zone: public
 var_sshd_disable_compression: 'no'
 var_rekey_limit_size: 1G
 var_rekey_limit_time: 1h
-sshd_strong_macs: hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha2-256,hmac-sha2-512
 var_sssd_certificate_verification_digest_function: sha512
 var_audit_failure_mode: '2'
 var_auditd_disk_error_action: halt
@@ -116,7 +114,6 @@ DISA_STIG_RHEL_09_213085: true
 DISA_STIG_RHEL_09_213090: true
 DISA_STIG_RHEL_09_213095: true
 DISA_STIG_RHEL_09_213100: true
-DISA_STIG_RHEL_09_213105: true
 DISA_STIG_RHEL_09_213110: true
 DISA_STIG_RHEL_09_213115: true
 DISA_STIG_RHEL_09_214010: true
@@ -128,20 +125,18 @@ DISA_STIG_RHEL_09_215010: true
 DISA_STIG_RHEL_09_215015: true
 DISA_STIG_RHEL_09_215020: true
 DISA_STIG_RHEL_09_215025: true
-DISA_STIG_RHEL_09_215030: true
-DISA_STIG_RHEL_09_215035: true
 DISA_STIG_RHEL_09_215040: true
 DISA_STIG_RHEL_09_215045: true
 DISA_STIG_RHEL_09_215050: true
 DISA_STIG_RHEL_09_215055: true
 DISA_STIG_RHEL_09_215060: true
-DISA_STIG_RHEL_09_215065: true
 DISA_STIG_RHEL_09_215075: true
 DISA_STIG_RHEL_09_215080: true
 DISA_STIG_RHEL_09_215085: true
 DISA_STIG_RHEL_09_215090: true
 DISA_STIG_RHEL_09_215095: true
 DISA_STIG_RHEL_09_215100: true
+DISA_STIG_RHEL_09_215101: true
 DISA_STIG_RHEL_09_215105: true
 DISA_STIG_RHEL_09_231040: true
 DISA_STIG_RHEL_09_231045: true
@@ -224,7 +219,6 @@ DISA_STIG_RHEL_09_232230: true
 DISA_STIG_RHEL_09_232235: true
 DISA_STIG_RHEL_09_232240: true
 DISA_STIG_RHEL_09_232245: true
-DISA_STIG_RHEL_09_232265: true
 DISA_STIG_RHEL_09_232270: true
 DISA_STIG_RHEL_09_251010: true
 DISA_STIG_RHEL_09_251015: true
@@ -273,8 +267,6 @@ DISA_STIG_RHEL_09_255035: true
 DISA_STIG_RHEL_09_255040: true
 DISA_STIG_RHEL_09_255045: true
 DISA_STIG_RHEL_09_255050: true
-DISA_STIG_RHEL_09_255070: true
-DISA_STIG_RHEL_09_255075: true
 DISA_STIG_RHEL_09_255080: true
 DISA_STIG_RHEL_09_255085: true
 DISA_STIG_RHEL_09_255090: true
@@ -396,7 +388,6 @@ DISA_STIG_RHEL_09_611180: true
 DISA_STIG_RHEL_09_611185: true
 DISA_STIG_RHEL_09_611195: true
 DISA_STIG_RHEL_09_611200: true
-DISA_STIG_RHEL_09_611205: true
 DISA_STIG_RHEL_09_631020: true
 DISA_STIG_RHEL_09_651010: true
 DISA_STIG_RHEL_09_651015: true
@@ -496,7 +487,6 @@ DISA_STIG_RHEL_09_671020: true
 DISA_STIG_RHEL_09_671025: true
 DISA_STIG_RHEL_09_672025: true
 DISA_STIG_RHEL_09_672030: true
-DISA_STIG_RHEL_09_672035: true
 DISA_STIG_RHEL_09_672050: true
 DISA_STIG_needed_rules: true
 account_disable_post_pw_expiration: true
@@ -647,8 +637,6 @@ configure_crypto_policy: true
 configure_kerberos_crypto_policy: true
 configure_libreswan_crypto_policy: true
 configure_opensc_card_drivers: true
-configure_openssl_crypto_policy: true
-configure_ssh_crypto_policy: true
 configure_strategy: true
 configure_usbguard_auditbackend: true
 coredump_disable_backtraces: true
@@ -753,7 +741,6 @@ file_permissions_cron_daily: true
 file_permissions_cron_hourly: true
 file_permissions_cron_monthly: true
 file_permissions_cron_weekly: true
-file_permissions_crontab: true
 file_permissions_etc_audit_auditd: true
 file_permissions_etc_group: true
 file_permissions_etc_gshadow: true
@@ -773,14 +760,13 @@ gnome_gdm_disable_automatic_login: true
 grub2_audit_argument: true
 grub2_audit_backlog_limit_argument: true
 grub2_disable_interactive_boot: true
+grub2_init_on_free: true
 grub2_page_poison_argument: true
 grub2_pti_argument: true
-grub2_slub_debug_argument: true
 grub2_vsyscall_argument: true
 high_disruption: true
 high_severity: true
 install_smartcard_packages: true
-kerberos_disable_no_keytab: true
 kernel_module_atm_disabled: true
 kernel_module_bluetooth_disabled: true
 kernel_module_can_disabled: true
@@ -851,9 +837,8 @@ package_openssh_server_installed: true
 package_pcsc_lite_installed: true
 package_policycoreutils_installed: true
 package_policycoreutils_python_utils_installed: true
-package_quagga_removed: true
+package_postfix_installed: true
 package_rng_tools_installed: true
-package_rsh_server_removed: true
 package_rsyslog_gnutls_installed: true
 package_rsyslog_installed: true
 package_s_nail_installed: true
@@ -865,7 +850,6 @@ package_tftp_server_removed: true
 package_tuned_removed: true
 package_usbguard_installed: true
 package_vsftpd_removed: true
-package_ypserv_removed: true
 postfix_client_configure_mail_alias: true
 postfix_client_configure_mail_alias_postmaster: true
 postfix_prevent_unrestricted_relay: true
@@ -874,6 +858,7 @@ require_emergency_target_auth: true
 require_singleuser_auth: true
 restrict_strategy: true
 root_permissions_syslibrary_files: true
+rootfiles_configured: true
 rsyslog_cron_logging: true
 rsyslog_encrypt_offload_actionsendstreamdriverauthmode: true
 rsyslog_encrypt_offload_actionsendstreamdrivermode: true
@@ -917,7 +902,6 @@ sshd_rekey_limit: true
 sshd_set_idle_timeout: true
 sshd_set_keepalive: true
 sshd_set_loglevel_verbose: true
-sshd_use_strong_macs: true
 sshd_x11_use_localhost: true
 sssd_certificate_verification: true
 sssd_enable_smartcards: true
@@ -959,7 +943,6 @@ sysctl_net_ipv6_conf_all_forwarding: true
 sysctl_net_ipv6_conf_default_accept_ra: true
 sysctl_net_ipv6_conf_default_accept_redirects: true
 sysctl_net_ipv6_conf_default_accept_source_route: true
-sysctl_user_max_user_namespaces: true
 unknown_severity: true
 unknown_strategy: true
 usbguard_generate_policy: true
