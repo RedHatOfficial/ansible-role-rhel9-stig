@@ -70,6 +70,7 @@ var_sshd_disable_compression: 'no'
 var_rekey_limit_size: 1G
 var_rekey_limit_time: 1h
 var_sssd_certificate_verification_digest_function: sha512
+var_audit_backlog_limit: '8192'
 var_audit_failure_mode: '2'
 var_auditd_disk_error_action: halt
 var_auditd_disk_full_action: halt
@@ -535,7 +536,6 @@ accounts_user_interactive_home_directory_defined: true
 accounts_user_interactive_home_directory_exists: true
 aide_build_database: true
 aide_check_audit_tools: true
-aide_periodic_cron_checking: true
 aide_scan_notification: true
 aide_use_fips_hashes: true
 aide_verify_acls: true
