@@ -2,7 +2,7 @@
 # defaults file for rhel9_stig
 var_aide_scan_notification_email: root@localhost
 var_system_crypto_policy: FIPS:STIG
-inactivity_timeout_value: '900'
+inactivity_timeout_value: '600'
 var_screensaver_lock_delay: '0'
 var_sudo_timestamp_timeout: '0'
 var_authselect_profile: sssd
@@ -24,7 +24,7 @@ var_password_pam_retry: '3'
 var_password_pam_ucredit: '-1'
 var_password_hashing_algorithm_pam: sha512
 var_password_hashing_algorithm: SHA512
-var_logind_session_timeout: '900'
+var_logind_session_timeout: '600'
 var_smartcard_drivers: cac
 var_account_disable_post_pw_expiration: '35'
 var_accounts_maximum_age_login_defs: '60'
@@ -127,6 +127,7 @@ DISA_STIG_RHEL_09_215010: true
 DISA_STIG_RHEL_09_215015: true
 DISA_STIG_RHEL_09_215020: true
 DISA_STIG_RHEL_09_215025: true
+DISA_STIG_RHEL_09_215035: true
 DISA_STIG_RHEL_09_215040: true
 DISA_STIG_RHEL_09_215045: true
 DISA_STIG_RHEL_09_215050: true
@@ -219,7 +220,6 @@ DISA_STIG_RHEL_09_232220: true
 DISA_STIG_RHEL_09_232225: true
 DISA_STIG_RHEL_09_232230: true
 DISA_STIG_RHEL_09_232235: true
-DISA_STIG_RHEL_09_232240: true
 DISA_STIG_RHEL_09_232245: true
 DISA_STIG_RHEL_09_232270: true
 DISA_STIG_RHEL_09_251010: true
@@ -332,7 +332,6 @@ DISA_STIG_RHEL_09_411085: true
 DISA_STIG_RHEL_09_411090: true
 DISA_STIG_RHEL_09_411100: true
 DISA_STIG_RHEL_09_411105: true
-DISA_STIG_RHEL_09_411115: true
 DISA_STIG_RHEL_09_412035: true
 DISA_STIG_RHEL_09_412040: true
 DISA_STIG_RHEL_09_412045: true
@@ -341,7 +340,6 @@ DISA_STIG_RHEL_09_412055: true
 DISA_STIG_RHEL_09_412060: true
 DISA_STIG_RHEL_09_412065: true
 DISA_STIG_RHEL_09_412070: true
-DISA_STIG_RHEL_09_412075: true
 DISA_STIG_RHEL_09_412080: true
 DISA_STIG_RHEL_09_431010: true
 DISA_STIG_RHEL_09_431015: true
@@ -427,7 +425,6 @@ DISA_STIG_RHEL_09_653095: true
 DISA_STIG_RHEL_09_653100: true
 DISA_STIG_RHEL_09_653105: true
 DISA_STIG_RHEL_09_653110: true
-DISA_STIG_RHEL_09_653115: true
 DISA_STIG_RHEL_09_653120: true
 DISA_STIG_RHEL_09_653125: true
 DISA_STIG_RHEL_09_653130: true
@@ -449,7 +446,7 @@ DISA_STIG_RHEL_09_654080: true
 DISA_STIG_RHEL_09_654085: true
 DISA_STIG_RHEL_09_654090: true
 DISA_STIG_RHEL_09_654095: true
-DISA_STIG_RHEL_09_654096: true
+DISA_STIG_RHEL_09_654097: true
 DISA_STIG_RHEL_09_654100: true
 DISA_STIG_RHEL_09_654105: true
 DISA_STIG_RHEL_09_654110: true
@@ -482,12 +479,10 @@ DISA_STIG_RHEL_09_654240: true
 DISA_STIG_RHEL_09_654245: true
 DISA_STIG_RHEL_09_654250: true
 DISA_STIG_RHEL_09_654255: true
-DISA_STIG_RHEL_09_654260: true
 DISA_STIG_RHEL_09_654265: true
 DISA_STIG_RHEL_09_654275: true
 DISA_STIG_RHEL_09_671020: true
 DISA_STIG_RHEL_09_671025: true
-DISA_STIG_RHEL_09_672025: true
 DISA_STIG_RHEL_09_672030: true
 DISA_STIG_RHEL_09_672050: true
 DISA_STIG_needed_rules: true
@@ -531,7 +526,6 @@ accounts_umask_etc_csh_cshrc: true
 accounts_umask_etc_login_defs: true
 accounts_umask_etc_profile: true
 accounts_umask_interactive_users: true
-accounts_user_dot_no_world_writable_programs: true
 accounts_user_interactive_home_directory_defined: true
 accounts_user_interactive_home_directory_exists: true
 aide_build_database: true
@@ -577,7 +571,6 @@ audit_rules_kernel_module_loading_finit: true
 audit_rules_kernel_module_loading_init: true
 audit_rules_login_events_faillock: true
 audit_rules_login_events_lastlog: true
-audit_rules_login_events_tallylog: true
 audit_rules_privileged_commands_chage: true
 audit_rules_privileged_commands_chsh: true
 audit_rules_privileged_commands_crontab: true
@@ -637,7 +630,6 @@ chronyd_specify_remote_server: true
 clean_components_post_updating: true
 configure_bind_crypto_policy: true
 configure_crypto_policy: true
-configure_kerberos_crypto_policy: true
 configure_libreswan_crypto_policy: true
 configure_opensc_card_drivers: true
 configure_strategy: true
@@ -662,7 +654,6 @@ dconf_gnome_session_idle_user_locks: true
 dir_group_ownership_library_dirs: true
 dir_ownership_library_dirs: true
 dir_permissions_library_dirs: true
-dir_perms_world_writable_root_owned: true
 dir_perms_world_writable_sticky_bits: true
 directory_group_ownership_var_log_audit: true
 directory_groupowner_sshd_config_d: true
@@ -675,9 +666,9 @@ disable_host_auth: true
 disable_strategy: true
 disable_users_coredumps: true
 disallow_bypass_password_sudo: true
-display_login_attempts: true
 enable_authselect: true
 enable_strategy: true
+ensure_epel_repos_disabled: true
 ensure_gpgcheck_globally_activated: true
 ensure_gpgcheck_local_packages: true
 ensure_gpgcheck_never_disabled: true
