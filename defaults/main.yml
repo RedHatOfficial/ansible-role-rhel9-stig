@@ -87,7 +87,6 @@ var_time_service_set_maxpoll: '16'
 var_sshd_set_keepalive: '1'
 sshd_idle_timeout_value: '600'
 firewalld_sshd_zone: public
-var_sshd_disable_compression: 'no'
 var_rekey_limit_size: 1G
 var_rekey_limit_time: 1h
 var_sssd_certificate_verification_digest_function: sha512
@@ -300,7 +299,6 @@ DISA_STIG_RHEL_09_255110: true
 DISA_STIG_RHEL_09_255115: true
 DISA_STIG_RHEL_09_255120: true
 DISA_STIG_RHEL_09_255125: true
-DISA_STIG_RHEL_09_255130: true
 DISA_STIG_RHEL_09_255135: true
 DISA_STIG_RHEL_09_255140: true
 DISA_STIG_RHEL_09_255145: true
@@ -503,6 +501,7 @@ DISA_STIG_RHEL_09_654265: true
 DISA_STIG_RHEL_09_654275: true
 DISA_STIG_RHEL_09_671020: true
 DISA_STIG_RHEL_09_671025: true
+DISA_STIG_RHEL_09_672020: true
 DISA_STIG_RHEL_09_672030: true
 DISA_STIG_RHEL_09_672050: true
 DISA_STIG_needed_rules: true
@@ -558,6 +557,7 @@ audit_privileged_commands_init: true
 audit_privileged_commands_poweroff: true
 audit_privileged_commands_reboot: true
 audit_privileged_commands_shutdown: true
+audit_rules_cron_execution: true
 audit_rules_dac_modification_chmod: true
 audit_rules_dac_modification_chown: true
 audit_rules_dac_modification_fchmod: true
@@ -573,7 +573,6 @@ audit_rules_dac_modification_removexattr: true
 audit_rules_dac_modification_setxattr: true
 audit_rules_dac_modification_umount: true
 audit_rules_dac_modification_umount2: true
-audit_rules_etc_cron_d: true
 audit_rules_execution_chacl: true
 audit_rules_execution_chcon: true
 audit_rules_execution_semanage: true
@@ -627,7 +626,6 @@ audit_rules_usergroup_modification_gshadow: true
 audit_rules_usergroup_modification_opasswd: true
 audit_rules_usergroup_modification_passwd: true
 audit_rules_usergroup_modification_shadow: true
-audit_rules_var_spool_cron: true
 auditd_data_disk_error_action_stig: true
 auditd_data_disk_full_action_stig: true
 auditd_data_retention_action_mail_acct: true
@@ -657,6 +655,7 @@ configure_strategy: true
 configure_usbguard_auditbackend: true
 coredump_disable_backtraces: true
 coredump_disable_storage: true
+crypto_policy_not_overridden: true
 dconf_db_up_to_date: true
 dconf_gnome_banner_enabled: true
 dconf_gnome_disable_automount_open: true
@@ -745,18 +744,13 @@ file_ownership_audit_configuration: true
 file_ownership_binary_dirs: true
 file_ownership_library_dirs: true
 file_permission_user_init_files_root: true
-file_permissions_audit_configuration: true
+file_permissions_audit_configuration_stig: true
 file_permissions_backup_etc_group: true
 file_permissions_backup_etc_gshadow: true
 file_permissions_backup_etc_passwd: true
 file_permissions_backup_etc_shadow: true
 file_permissions_binary_dirs: true
-file_permissions_cron_d: true
-file_permissions_cron_daily: true
-file_permissions_cron_hourly: true
-file_permissions_cron_monthly: true
-file_permissions_cron_weekly: true
-file_permissions_etc_audit_auditd: true
+file_permissions_cron_not_modified: true
 file_permissions_etc_group: true
 file_permissions_etc_gshadow: true
 file_permissions_etc_passwd: true
@@ -837,7 +831,6 @@ package_aide_installed: true
 package_audispd_plugins_installed: true
 package_audit_installed: true
 package_chrony_installed: true
-package_cron_installed: true
 package_crypto_policies_installed: true
 package_fapolicyd_installed: true
 package_firewalld_installed: true
@@ -901,7 +894,6 @@ set_password_hashing_algorithm_libuserconf: true
 set_password_hashing_algorithm_logindefs: true
 set_password_hashing_algorithm_passwordauth: true
 special_service_block: true
-sshd_disable_compression: true
 sshd_disable_empty_passwords: true
 sshd_disable_gssapi_auth: true
 sshd_disable_kerb_auth: true
